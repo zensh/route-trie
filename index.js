@@ -9,6 +9,7 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else if (typeof define === 'function' && define.amd) define([], factory);
   else root.Trie = factory();
+  
 }(typeof window === 'object' ? window : this, function () {
   'use strict';
 
@@ -23,10 +24,10 @@
   Trie.prototype.define = function (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Only strings can be defined.');
     pattern = pattern
-    .replace(/(\/)+/g, '\/')
-    .replace(/^\//, '')
-    .replace(/\/$/, '')
-    .replace(/\(\)/g, '');
+      .replace(/(\/)+/g, '\/')
+      .replace(/^\//, '')
+      .replace(/\/$/, '')
+      .replace(/\(\)/g, '');
 
     return define(this.root, pattern.split('/'), this.flags);
   };
