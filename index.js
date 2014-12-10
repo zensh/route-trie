@@ -137,6 +137,6 @@
   }
 
   Trie.NAME = 'Trie';
-  Trie.VERSION = 'v0.1.0';
+  Trie.VERSION = 'v0.1.1';
   return Trie;
 }));
