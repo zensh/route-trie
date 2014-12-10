@@ -1,0 +1,43 @@
+{
+  "name": "route-trie",
+  "description": "A trie-based URL router",
+  "authors": [
+    "Yan Qing <admin@zensh.com>"
+  ],
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:zensh/route-trie.git"
+  },
+  "homepage": "https://github.com/zensh/route-trie",
+  "keywords": [
+    "trie",
+    "router",
+    "route",
+    "routing",
+    "url",
+    "url-trie",
+    "router-trie"
+  ],
+  "dependencies": {},
+  "devDependencies": {
+    "gulp": ">=3.8.0",
+    "gulp-jshint": ">=1.8.4",
+    "gulp-mocha": ">=1.0.0",
+    "gulp-sequence": ">=0.3.1",
+    "mocha": ">=1.21.0"
+  },
+  "scripts": {
+    "test": "gulp test"
+  },
+  "ignore": [
+    "**/.*",
+    "benchmark",
+    "test",
+    "examples",
+    "gulpfile.js",
+    "bower.json",
+    "component.json"
+  ]
+}

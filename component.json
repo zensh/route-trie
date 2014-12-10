@@ -1,0 +1,31 @@
+{
+  "name": "route-trie",
+  "description": "A trie-based URL router",
+  "authors": [
+    "Yan Qing <admin@zensh.com>"
+  ],
+  "version": "0.1.0",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:zensh/route-trie.git"
+  },
+  "homepage": "https://github.com/zensh/route-trie",
+  "keywords": [
+    "trie",
+    "router",
+    "route",
+    "routing",
+    "url",
+    "url-trie",
+    "router-trie"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "benchmark",
+    "test",
+    "examples",
+    "gulpfile.js"
+  ]
+}
