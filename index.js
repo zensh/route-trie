@@ -9,12 +9,15 @@
   if (typeof module === 'object' && module.exports) module.exports = factory();
   else if (typeof define === 'function' && define.amd) define([], factory);
   else root.Trie = factory();
-  
+
 }(typeof window === 'object' ? window : this, function () {
   'use strict';
 
   var slugReg = /^[\w\.-]+$/;
   var parameterReg = /^\:\w+\b/;
+  var multiSlashReg = /(\/){2,}/g;
+  var trimSlashReg = /(^\/)|(\/$)/g;
+  var EmptyBracketReg = /\(\)/g;
 
   function Trie(flags) {
     this.flags = flags ? 'i' : '';
@@ -24,16 +27,18 @@
   Trie.prototype.define = function (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Only strings can be defined.');
     pattern = pattern
-      .replace(/(\/)+/g, '\/')
-      .replace(/^\//, '')
-      .replace(/\/$/, '')
-      .replace(/\(\)/g, '');
+      .replace(multiSlashReg, '\/')
+      .replace(trimSlashReg, '')
+      .replace(EmptyBracketReg, '');
 
     return define(this.root, pattern.split('/'), this.flags);
   };
 
   Trie.prototype.match = function (path) {
-    if (path[0] === '/') path = path.slice(1);
+    // the path should be normalized before match, just as path.normalize do in Node.js
+    path = path
+      .replace(multiSlashReg, '\/')
+      .replace(trimSlashReg, '');
     var frags = path.split('/');
     var result = {params: {}, node: null};
     var node = this.root;
@@ -138,6 +143,6 @@
   }
 
   Trie.NAME = 'Trie';
-  Trie.VERSION = 'v0.1.1';
+  Trie.VERSION = 'v0.1.2';
   return Trie;
 }));

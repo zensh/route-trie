@@ -1,4 +1,4 @@
-route-trie v0.1.1 [![Build Status](https://travis-ci.org/zensh/route-trie.svg)](https://travis-ci.org/zensh/route-trie)
+route-trie v0.1.2 [![Build Status](https://travis-ci.org/zensh/route-trie.svg)](https://travis-ci.org/zensh/route-trie)
 ====
 A trie-based URL router.
 
@@ -6,7 +6,7 @@ A trie-based URL router.
 
 ### [Trie-based request routing](http://blog.vulcanproxy.com/trie-based-http-requests-routing/)
 
-** It is a different implementation from [routington](https://github.com/pillarjs/routington) **
+**It is a different implementation from [routington](https://github.com/pillarjs/routington)**
 
 route-trie is a [trie](http://en.wikipedia.org/wiki/Trie)-based URL router.
 Its goal is only to define and match URLs.
