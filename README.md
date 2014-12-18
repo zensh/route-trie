@@ -1,4 +1,4 @@
-route-trie v0.1.2 [![Build Status](https://travis-ci.org/zensh/route-trie.svg)](https://travis-ci.org/zensh/route-trie)
+route-trie v0.2.0 [![Build Status](https://travis-ci.org/zensh/route-trie.svg)](https://travis-ci.org/zensh/route-trie)
 ====
 A trie-based URL router.
 
@@ -26,9 +26,6 @@ Implementations:
 IE9+
 
 ## Demo
-
-```js
-```
 
 ## Installation
 
@@ -77,6 +74,8 @@ Each fragment of the pattern, delimited by a `/`, can have the following signatu
 - `:name` - Wildcard route matched to a name, ex `/:type`
 - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
 - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
+- `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
+- `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
 
 ### Trie.prototype.match(path)
 
