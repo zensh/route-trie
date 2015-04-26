@@ -17,6 +17,7 @@ describe('route-trie', function() {
     assert.strictEqual(node, trie.define('///'));
 
     node = trie.define('/path1/path2');
+    assert.strictEqual(node._nodeState.pattern, '/path1/path2');
     assert.strictEqual(node, trie.define('path1/path2'));
     assert.strictEqual(node, trie.define('//path1/path2'));
     assert.strictEqual(node, trie.define('/path1///path2'));
@@ -30,6 +31,7 @@ describe('route-trie', function() {
     node = trie.define('/path1/:path2/path3');
     assert.strictEqual(node, trie.define('/path1/:path22/path3'));
     assert.notStrictEqual(node, trie.define('/path1/:path22(a|b)/path3'));
+    assert.strictEqual(node._nodeState.pattern, '/path1/:path2/path3');
 
     assert.notStrictEqual(trie.define('/Post'), trie.define('/post'));
 

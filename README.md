@@ -1,6 +1,9 @@
-route-trie v0.2.0 [![Build Status](https://travis-ci.org/zensh/route-trie.svg)](https://travis-ci.org/zensh/route-trie)
+route-trie
 ====
 A trie-based URL router.
+
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url]
 
 ### [trie](http://en.wikipedia.org/wiki/Trie)
 
@@ -19,7 +22,8 @@ The intention is for you to build a framework on top either in node.js or in the
 
 Implementations:
 
-- [toa-router](https://github.com/toajs/toa-router)
+- [toa-router](https://github.com/toajs/toa-router) A trie router for toa(server).
+- [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
 
 ### Browser Support
 
@@ -59,6 +63,7 @@ var trie = new Trie(true); // ignore case for match
 
 ```js
 var node = trie.define('/:type/:id([a-z0-9]{6})');
+// assert(node._nodeState.pattern === '/:type/:id([a-z0-9]{6})');
 // assert(node !== trie.define('/:type'));
 // assert(node !== trie.define('/post'));
 // assert(node === trie.define('/:type/:id([a-z0-9]{6})'));
@@ -92,3 +97,9 @@ The result `match`, unless `null`, will be an object with the following properti
 
 - `params` - A list of named parameters, ex, `match.params.id === 'abc123'`.
 - `node` - The matched node.
+
+[npm-url]: https://npmjs.org/package/route-trie
+[npm-image]: http://img.shields.io/npm/v/route-trie.svg
+
+[travis-url]: https://travis-ci.org/zensh/route-trie
+[travis-image]: http://img.shields.io/travis/zensh/route-trie.svg

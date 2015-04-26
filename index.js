@@ -26,12 +26,14 @@
 
   Trie.prototype.define = function(pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Only strings can be defined.');
-    pattern = pattern
+    var _pattern = pattern
       .replace(multiSlashReg, '\/')
       .replace(trimSlashReg, '')
       .replace(EmptyBracketReg, '');
 
-    return define(this.root, pattern.split('/'), this.flags);
+    var node = define(this.root, _pattern.split('/'), this.flags);
+    if (node._nodeState.pattern == null) node._nodeState.pattern = pattern;
+    return node;
   };
 
   Trie.prototype.match = function(path) {
@@ -162,10 +164,10 @@
   }
 
   function wrapRegex(str) {
-    return (str[0] === '(' ? '^' : '^(') + str + (str[str.length - 1] === ')' ? '$' : ')$');
+    return '^' + str.replace(/^\(?/, '(').replace(/\)?$/, ')') + '$';
   }
 
   Trie.NAME = 'Trie';
-  Trie.VERSION = 'v0.2.0';
+  Trie.VERSION = 'v0.2.1';
   return Trie;
 }));
