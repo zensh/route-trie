@@ -249,4 +249,42 @@ describe('route-trie', function() {
       other: 'x/y/z'
     });
   });
+
+  it('trie.match, multiMatch', function() {
+    var trie = new Trie();
+
+    var node1 = trie.define('/');
+    var node2 = trie.define('/:type');
+    var node3 = trie.define('/:type/:id([a-z0-9]{6}');
+
+    var match = trie.match('/', true);
+    assert.strictEqual(match.nodes.length, 1);
+    assert.strictEqual(match.nodes[0], node1);
+    assert.deepEqual(match.params, {});
+
+    // should not match node1(root node)!
+    match = trie.match('/post', true);
+    assert.strictEqual(match.nodes.length, 1);
+    assert.strictEqual(match.nodes[0], node2);
+    assert.deepEqual(match.params, {type: 'post'});
+
+    match = trie.match('/post/abcdef', true);
+    assert.strictEqual(match.nodes.length, 2);
+    assert.strictEqual(match.nodes[0], node2);
+    assert.strictEqual(match.nodes[1], node3);
+    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'});
+
+    match = trie.match('/post/abcdef/xyz', true);
+    assert.strictEqual(match.nodes.length, 2);
+    assert.strictEqual(match.nodes[0], node2);
+    assert.strictEqual(match.nodes[1], node3);
+    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'});
+
+    match = trie.match('/post/abcdef/xyz/123', true);
+    assert.strictEqual(match.nodes.length, 2);
+    assert.strictEqual(match.nodes[0], node2);
+    assert.strictEqual(match.nodes[1], node3);
+    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'});
+
+  });
 });

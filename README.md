@@ -5,7 +5,7 @@ A trie-based URL router.
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
 
-### [trie](http://en.wikipedia.org/wiki/Trie)
+### About [trie](http://en.wikipedia.org/wiki/Trie)
 
 ### [Trie-based request routing](http://blog.vulcanproxy.com/trie-based-http-requests-routing/)
 
@@ -35,11 +35,15 @@ IE9+
 
 **Node.js:**
 
-    npm install route-trie
+```sh
+npm install route-trie
+```
 
 **Bower:**
 
-    bower install route-trie
+```sh
+bower install route-trie
+```
 
 ## API
 
@@ -49,17 +53,32 @@ var Trie = require('route-trie');
 
 ### Trie([flagI])
 
-`flagI`: `Boolean`, default `false`, ignore case.
+Create a trie.
+
+- `flagI`: {Boolean}, default `false`, ignore case
+
+return `trie` object.
 
 ```js
-var trie = new Trie();
-```
-
-```js
-var trie = new Trie(true); // ignore case for match
+var trie1 = new Trie();
+var trie2 = new Trie(true); // ignore case for match
 ```
 
 ### Trie.prototype.define(pattern)
+
+Define a `node` for the `pattern`, The same pattern will always return the same `node`. The result `node`, will be an emtpy object, it has a private and not enumerable property `_nodeState`. `_nodeState` is a object that have `name`, `pattern`, `childNodes` and so on. You can mount properties and methods on the `node`, but not on `_nodeState`.
+
+- `pattern`: {String}, each fragment of the pattern, delimited by a `/`, can have the following signature:
+
+  - `string` - ex `/post`
+  - `string|string` - `|` separated strings, ex `/post|task`
+  - `:name` - Wildcard route matched to a name, ex `/:type`
+  - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
+  - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
+  - `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
+  - `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
+
+return a `node` object.
 
 ```js
 var node = trie.define('/:type/:id([a-z0-9]{6})');
@@ -70,33 +89,33 @@ var node = trie.define('/:type/:id([a-z0-9]{6})');
 // assert(trie.define('/:type') === trie.define('/:type1'));
 ```
 
-The result `node`, will be an emtpy object, it has a private and not enumerable property `_nodeState`.
+### Trie.prototype.match(path[, multiMatch])
 
-Each fragment of the pattern, delimited by a `/`, can have the following signature:
+- `path`: {String}, URL pathname to match and get the defined `node`
+- `multiMatch`: {Boolean}, *Optional*, default: `false`. If true, a path maybe matched one more `node`s.
 
-- `string` - ex `/post`
-- `string|string` - `|` separated strings, ex `/post|task`
-- `:name` - Wildcard route matched to a name, ex `/:type`
-- `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
-- `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
-- `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
-- `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
+Return `matched` object:
 
-### Trie.prototype.match(path)
+- **Default mode**: return `null` if no node matched, otherwise return an object with the following properties:
 
-```js
-var match = trie.match('/post');
-// assert(match === null);
+  - `params`: {Object}, A list of named parameters, ex, `match.params.id === 'abc123'`.
+  - `node`: {Object}, The matched node.
 
-match = trie.match('/post/abc123');
-// assert(match.node === trie.define('/:type/:id([a-z0-9]{6}'));
-// assert.deepEqual(match.params, {type: 'post', id: 'abc123'})
-```
+  ```js
+  var node = trie.define('/:type/:id([a-z0-9]{6}');
+  var match = trie.match('/post');
+  // assert(match === null);
 
-The result `match`, unless `null`, will be an object with the following properties:
+  match = trie.match('/post/abc123');
+  // assert(match.node === node);
+  // assert.deepEqual(match.params, {type: 'post', id: 'abc123'})
+  ```
 
-- `params` - A list of named parameters, ex, `match.params.id === 'abc123'`.
-- `node` - The matched node.
+- **multiMatch mode**: will always return an object with the following properties:
+
+  - `params`: {Object}, A list of named parameters.
+  - `nodes`: {Array}, if no node matched, it will be a empty array, otherwise will be a array of matched nodes.
+
 
 [npm-url]: https://npmjs.org/package/route-trie
 [npm-image]: http://img.shields.io/npm/v/route-trie.svg

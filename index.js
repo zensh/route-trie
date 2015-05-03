@@ -25,7 +25,9 @@
   }
 
   Trie.prototype.define = function(pattern) {
-    if (typeof pattern !== 'string') throw new TypeError('Only strings can be defined.');
+    if (typeof pattern !== 'string')
+      throw new TypeError('Only strings can be defined.');
+
     var _pattern = pattern
       .replace(multiSlashReg, '\/')
       .replace(trimSlashReg, '')
@@ -33,49 +35,35 @@
 
     var node = define(this.root, _pattern.split('/'), this.flags);
     if (node._nodeState.pattern == null) node._nodeState.pattern = pattern;
+
     return node;
   };
 
-  Trie.prototype.match = function(path) {
+  Trie.prototype.match = function(path, multiMatch) {
     // the path should be normalized before match, just as path.normalize do in Node.js
     path = path
       .replace(multiSlashReg, '\/')
       .replace(trimSlashReg, '');
-    var frags = path.split('/');
-    var result = {
-      params: {},
-      node: null
-    };
-    var node = this.root;
-    var child = null;
+
     var frag = '';
+    var node = this.root;
+    var frags = path.split('/');
+    var result = {params: {}};
+
+    if (multiMatch) result.nodes = [];
 
     while (frags.length) {
-      frag = safeDecodeURIComponent(frags.shift());
-      if (frag === false) return null;
-      child = node._nodeState.childNodes[this.flags ? frag.toLowerCase() : frag];
-
-      if (!child) {
-        for (var i = 0, len = node._nodeState.regexChildNodes.length; i < len; i++) {
-          var regex = node._nodeState.regexChildNodes[i];
-          if (regex[2] && !regex[2].test(frag)) continue;
-          if (regex[0]._nodeState.matchRemaining) {
-            while (frags.length) {
-              var _frag = safeDecodeURIComponent(frags.shift());
-              if (_frag === false) return null;
-              frag += '/' + _frag;
-            }
-          }
-          if (regex[1]) result.params[regex[1]] = frag;
-          child = regex[0];
-          break;
-        }
+      node = matchNode(node, frags, result.params, this.flags);
+      if (node) {
+        if (multiMatch && node._nodeState.endpoint) result.nodes.push(node);
+        continue;
       }
-      if (!child) return null;
-      node = child;
+      if (!multiMatch) return null;
+      break;
     }
-    if (!node._nodeState.endpoint) return null;
 
+    if (multiMatch) return result;
+    if (!node._nodeState.endpoint) return null;
     result.node = node;
     return result;
   };
@@ -109,6 +97,32 @@
     });
   }
 
+  function matchNode(node, frags, params, flags) {
+    var frag = safeDecodeURIComponent(frags.shift());
+    if (frag === false) return null;
+    var nodeState = node._nodeState;
+
+    var child = nodeState.childNodes[flags ? frag.toLowerCase() : frag];
+    if (child) return child;
+
+    for (var i = 0, len = nodeState.regexChildNodes.length; i < len; i++) {
+      var regex = nodeState.regexChildNodes[i];
+      if (regex[2] && !regex[2].test(frag)) continue;
+      if (regex[0]._nodeState.matchRemaining) {
+        while (frags.length) {
+          var _frag = safeDecodeURIComponent(frags.shift());
+          if (_frag === false) return null;
+          frag += '/' + _frag;
+        }
+      }
+      if (regex[1]) params[regex[1]] = frag;
+      child = regex[0];
+      break;
+    }
+
+    return child;
+  }
+
   function parseNode(parentNode, frag, flags) {
     var node = null;
     var matchRemaining = false;
@@ -139,9 +153,9 @@
       if (frag) frag = wrapRegex(frag);
 
       if (regexNames[frag] >= 0) node = regexChildNodes[regexNames[frag]][0];
-      else if (lastRegexChildNode && lastRegexChildNode._nodeState.matchRemaining) {
+      else if (lastRegexChildNode && lastRegexChildNode._nodeState.matchRemaining)
         throw new Error('Can not define more regex pattern while "*" pattern defined');
-      } else {
+      else {
         node = new Node(frag, matchRemaining);
         regexChildNodes.push([node, parameter, frag && new RegExp(frag, flags)]);
         regexNames[frag] = regexChildNodes.length - 1;
@@ -168,6 +182,6 @@
   }
 
   Trie.NAME = 'Trie';
-  Trie.VERSION = 'v0.2.1';
+  Trie.VERSION = 'v1.0.0';
   return Trie;
 }));
