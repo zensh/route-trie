@@ -14,15 +14,26 @@ describe('route-trie', function () {
 
     var node = trie.define('/')
     assert.strictEqual(node, trie.define(''))
-    assert.strictEqual(node, trie.define('///'))
+    assert.throws(function () {
+      trie.define('///')
+    }, null, 'Multi-slash exist.')
 
     node = trie.define('/path1/path2')
     assert.strictEqual(node._nodeState.pattern, '/path1/path2')
     assert.strictEqual(node, trie.define('path1/path2'))
-    assert.strictEqual(node, trie.define('//path1/path2'))
-    assert.strictEqual(node, trie.define('/path1///path2'))
     assert.strictEqual(node, trie.define('/path1/path2/'))
-    assert.strictEqual(node, trie.define('/path1/path2()/'))
+
+    assert.throws(function () {
+      trie.define('//path1/path2')
+    }, null, 'Multi-slash exist.')
+
+    assert.throws(function () {
+      trie.define('/path1///path2')
+    }, null, 'Multi-slash exist.')
+
+    assert.throws(function () {
+      trie.define('/path1/path2()/')
+    }, null, 'Empty bracketR exist.')
 
     assert.notStrictEqual(node, trie.define('/path1/path2/path3'))
     assert.notStrictEqual(node, trie.define('/path1/:path2'))
@@ -39,13 +50,20 @@ describe('route-trie', function () {
     node = trie.define('/*')
     assert.notStrictEqual(node, trie.define('/'))
     assert.notStrictEqual(node, trie.define('/post'))
-    assert.strictEqual(node, trie.define('/(*)'))
+    assert.throws(function () {
+      trie.define('/(*)')
+    }, null, 'Can not define more regex pattern while "*" pattern defined.')
     assert.throws(function () {
       trie.define('/(a|b)')
-    }, null, 'Can not define more regex pattern while "*" pattern defined')
+    }, null, 'Can not define more regex pattern while "*" pattern defined.')
     assert.throws(function () {
       trie.define('/(*)/post')
     }, null, 'Can not define regex pattern after "*" pattern')
+
+    trie = new Trie()
+    node = trie.define('/test:name(a|b)')
+    assert.notStrictEqual(node, trie.define('/test:name(c|d)'))
+    assert.notStrictEqual(node, trie.define('/test::name(a|b)'))
   })
 
   it('trie.match', function () {
@@ -187,9 +205,7 @@ describe('route-trie', function () {
     assert.deepEqual(trie.match('/post/abc').params, {})
 
     trie = new Trie()
-    node = trie.define(':all*')
-    assert.strictEqual(trie.define(':all(*)'), node)
-    assert.strictEqual(trie.define('*'), node)
+    node = trie.define(':all(*)')
     assert.deepEqual(trie.match('').params, {
       all: ''
     })
@@ -248,6 +264,33 @@ describe('route-trie', function () {
       type: 'event',
       other: 'x/y/z'
     })
+
+    trie = new Trie()
+    trie.define('/prefix:name/:other(*)')
+    trie.define('/test.com::name')
+    trie.define('/post')
+    assert.strictEqual(trie.match('/prefix'), null)
+    assert.deepEqual(trie.match('/prefix/123').params, {
+      name: '',
+      other: '123'
+    })
+    assert.deepEqual(trie.match('/prefix123/456').params, {
+      name: '123',
+      other: '456'
+    })
+    assert.deepEqual(trie.match('/prefix123/456/789').params, {
+      name: '123',
+      other: '456/789'
+    })
+
+    assert.strictEqual(trie.match('/test.com'), null)
+    assert.deepEqual(trie.match('/test.com:').params, {
+      name: ''
+    })
+    assert.deepEqual(trie.match('/test.com:zensh').params, {
+      name: 'zensh'
+    })
+    assert.strictEqual(trie.match('/test.com:zensh/test'), null)
   })
 
   it('trie.match, multiMatch', function () {
@@ -285,6 +328,5 @@ describe('route-trie', function () {
     assert.strictEqual(match.nodes[0], node2)
     assert.strictEqual(match.nodes[1], node3)
     assert.deepEqual(match.params, {type: 'post', id: 'abcdef'})
-
   })
 })

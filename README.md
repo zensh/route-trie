@@ -73,8 +73,10 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
   - `string` - ex `/post`
   - `string|string` - `|` separated strings, ex `/post|task`
   - `:name` - Wildcard route matched to a name, ex `/:type`
+  - `prefix:name` - Wildcard route matched to a name, ex `/api:type`
   - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
   - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
+  - `prefix:name(regex)`- Named regular expression match ex `/api:type/:id([a-z0-9]{6})`
   - `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
   - `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
 
