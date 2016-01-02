@@ -76,7 +76,7 @@ describe('route-trie', function () {
     assert.throws(function () {
       trie.define('///')
     }, null, 'Multi-slash exist.')
-  });
+  })
 
   it('trie.match', function () {
     var trie = new Trie()
