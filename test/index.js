@@ -35,6 +35,10 @@ describe('route-trie', function () {
       trie.define('/path1/path2()/')
     }, null, 'Empty bracketR exist.')
 
+    assert.throws(function () {
+      trie.define('/path1/:/')
+    }, null, 'Empty name exist.')
+
     assert.notStrictEqual(node, trie.define('/path1/path2/path3'))
     assert.notStrictEqual(node, trie.define('/path1/:path2'))
     assert.notStrictEqual(node, trie.define('/path2/path2'))
