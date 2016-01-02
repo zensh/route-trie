@@ -70,7 +70,7 @@ describe('route-trie', function () {
     var trie = new Trie()
 
     try {
-      trie.define('///');
+      trie.define('///')
     } catch (e) {}
 
     assert.throws(function () {
