@@ -14,7 +14,7 @@
 
   var slugReg = /^[-!.~\w]+$/
   var parameterReg = /^(.*)(\:\w+\b)(.*)$/
-  var multiSlashReg = /(\/){2,}/g
+  var multiSlashReg = /(\/){2,}/
   var trimSlashReg = /(^\/)|(\/$)/g
   var EmptyBracketReg = /\(\)/g
 
@@ -200,6 +200,6 @@
   }
 
   Trie.NAME = 'Trie'
-  Trie.VERSION = 'v1.0.1'
+  Trie.VERSION = 'v1.1.1'
   return Trie
 }))
