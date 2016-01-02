@@ -67,7 +67,7 @@ describe('route-trie', function () {
   })
 
   it('twice error case', function () {
-    trie = new Trie()
+    var trie = new Trie()
 
     try {
       trie.define('///');
