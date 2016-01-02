@@ -66,6 +66,18 @@ describe('route-trie', function () {
     assert.notStrictEqual(node, trie.define('/test::name(a|b)'))
   })
 
+  it('twice error case', function () {
+    trie = new Trie()
+
+    try {
+      trie.define('///');
+    } catch (e) {}
+
+    assert.throws(function () {
+      trie.define('///')
+    }, null, 'Multi-slash exist.')
+  });
+
   it('trie.match', function () {
     var trie = new Trie()
 
