@@ -48,7 +48,7 @@ bower install route-trie
 ## API
 
 ```js
-var Trie = require('route-trie');
+var Trie = require('route-trie')
 ```
 
 ### Trie([flagI])
@@ -60,8 +60,8 @@ Create a trie.
 return `trie` object.
 
 ```js
-var trie1 = new Trie();
-var trie2 = new Trie(true); // ignore case for match
+var trie1 = new Trie()
+var trie2 = new Trie(true) // ignore case for match
 ```
 
 ### Trie.prototype.define(pattern)
@@ -83,12 +83,12 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
 return a `node` object.
 
 ```js
-var node = trie.define('/:type/:id([a-z0-9]{6})');
-// assert(node._nodeState.pattern === '/:type/:id([a-z0-9]{6})');
-// assert(node !== trie.define('/:type'));
-// assert(node !== trie.define('/post'));
-// assert(node === trie.define('/:type/:id([a-z0-9]{6})'));
-// assert(trie.define('/:type') === trie.define('/:type1'));
+var node = trie.define('/:type/:id([a-z0-9]{6})')
+// assert(node._nodeState.pattern === '/:type/:id([a-z0-9]{6})')
+// assert(node !== trie.define('/:type'))
+// assert(node !== trie.define('/post'))
+// assert(node === trie.define('/:type/:id([a-z0-9]{6})'))
+// assert(trie.define('/:type') === trie.define('/:type1'))
 ```
 
 ### Trie.prototype.match(path[, multiMatch])
@@ -104,12 +104,12 @@ Return `matched` object:
   - `node`: {Object}, The matched node.
 
   ```js
-  var node = trie.define('/:type/:id([a-z0-9]{6}');
-  var match = trie.match('/post');
-  // assert(match === null);
+  var node = trie.define('/:type/:id([a-z0-9]{6}')
+  var match = trie.match('/post')
+  // assert(match === null)
 
-  match = trie.match('/post/abc123');
-  // assert(match.node === node);
+  match = trie.match('/post/abc123')
+  // assert(match.node === node)
   // assert.deepEqual(match.params, {type: 'post', id: 'abc123'})
   ```
 

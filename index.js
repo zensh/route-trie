@@ -8,36 +8,37 @@
 
   if (typeof module === 'object' && module.exports) module.exports = factory()
   else if (typeof define === 'function' && define.amd) define([], factory)
-  else root.Trie = factory()
+  else root.RouteTrie = factory()
 }(typeof window === 'object' ? window : this, function () {
   'use strict'
 
-  var slugReg = /^[-!.~\w]+$/
-  var parameterReg = /^(.*)(\:\w+\b)(.*)$/
+  var sepReg = /\|/
   var multiSlashReg = /(\/){2,}/
+  var regexReg = /^(.*)(\(.+\))$/
+  var maybeRegex = /[?^{}()|[\]\\]/
+  var parameterReg = /^(.*)(\:\w+\b)(.*)$/
+  var escapeReg = /[.*+?^${}()|[\]\\]/g
   var trimSlashReg = /(^\/)|(\/$)/g
-  var EmptyBracketReg = /\(\)/g
 
   function Trie (flags) {
     this.flags = flags ? 'i' : ''
-    this.root = new Node('root')
+    this.root = new Node(null, 'root')
   }
 
   Trie.prototype.define = function (pattern) {
-    if (typeof pattern !== 'string') throw new Error('Pattern is not valid string.')
+    if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
     if (multiSlashReg.test(pattern)) throw new Error('Multi-slash exist.')
-    if (EmptyBracketReg.test(pattern)) throw new Error('Empty bracketR exist.')
 
     var _pattern = pattern.replace(trimSlashReg, '')
     var node = define(this.root, _pattern.split('/'), this.flags)
-    if (node._nodeState.pattern === null) node._nodeState.pattern = pattern
 
+    if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
     return node
   }
 
+  // the path should be normalized before match, just as path.normalize do in Node.js
   Trie.prototype.match = function (path, multiMatch) {
-    if (typeof path !== 'string') throw new Error('Path is not valid string.')
-    // the path should be normalized before match, just as path.normalize do in Node.js
+    if (typeof path !== 'string') throw new TypeError('Path must be string.')
     path = path.replace(trimSlashReg, '')
 
     var node = this.root
@@ -46,39 +47,38 @@
 
     while (frags.length) {
       node = matchNode(node, frags, matched.params, this.flags)
+      // matched
       if (node) {
         if (multiMatch && node._nodeState.endpoint) matched.nodes.push(node)
         continue
       }
-      if (!multiMatch) return null
-      break
+      // not match
+      return multiMatch ? matched : null
     }
 
-    if (multiMatch) return matched
-    if (!node._nodeState.endpoint) return null
     matched.node = node
+    if (!multiMatch && !node._nodeState.endpoint) return null
     return matched
   }
 
-  function define (parentNode, frags, flags) {
-    var frag = frags.shift()
-    var child = parseNode(parentNode, frag, flags)
-    if (!frags.length) {
-      child._nodeState.endpoint = true
-      return child
-    }
-    if (child._nodeState.matchRemaining) throw new Error('Can not define regex pattern after "*" pattern.')
-    return define(child, frags, flags)
+  function Node (parentNode, frag, matchRemains) {
+    Object.defineProperty(this, '_nodeState', {
+      enumerable: false,
+      configurable: false,
+      writable: false,
+      value: new NodeState(parentNode, frag, matchRemains)
+    })
   }
 
-  function NodeState (frag, matchRemaining) {
+  function NodeState (parentNode, frag, matchRemains) {
     this.name = frag
     this.pattern = null
     this.endpoint = false
-    this.matchRemaining = matchRemaining
+    this.parentNode = parentNode
+    this.matchRemains = !!matchRemains
     this.childNodes = Object.create(null)
     this.regexNames = Object.create(null)
-    this.regexChildNodes = []
+    this.regexNodes = []
   }
 
   function RegexNode (node, prefix, param, regex) {
@@ -88,19 +88,24 @@
     this.regex = regex || null
   }
 
-  function Node (frag, matchRemaining) {
-    Object.defineProperty(this, '_nodeState', {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-      value: new NodeState(frag, matchRemaining)
-    })
-  }
-
   function TrieMatched () {
     this.node = null
     this.nodes = []
     this.params = {}
+  }
+
+  function define (parentNode, frags, flags) {
+    var frag = frags.shift()
+    var child = parseNode(parentNode, frag, flags)
+
+    if (!frags.length) {
+      child._nodeState.endpoint = true
+      return child
+    }
+    if (child._nodeState.matchRemains) {
+      throw new Error('Can not define regex pattern after "(*)" pattern.')
+    }
+    return define(child, frags, flags)
   }
 
   function matchNode (node, frags, params, flags) {
@@ -111,26 +116,26 @@
     var child = childNodes[flags ? frag.toLowerCase() : frag]
     if (child) return child
 
-    var regexChildNodes = node._nodeState.regexChildNodes
+    var regexNodes = node._nodeState.regexNodes
 
-    for (var i = 0, len = regexChildNodes.length; i < len; i++) {
-      var _frag = frag
-      var regexNode = regexChildNodes[i]
+    for (var fragCopy, regexNode, i = 0, len = regexNodes.length; i < len; i++) {
+      fragCopy = frag
+      regexNode = regexNodes[i]
 
       if (regexNode.prefix) {
-        if (_frag.indexOf(regexNode.prefix) !== 0) continue
-        _frag = _frag.slice(regexNode.prefix.length)
+        if (fragCopy.indexOf(regexNode.prefix) !== 0) continue
+        fragCopy = fragCopy.slice(regexNode.prefix.length)
       }
 
-      if (regexNode.regex && !regexNode.regex.test(_frag)) continue
-      if (regexNode.node._nodeState.matchRemaining) {
+      if (regexNode.regex && !regexNode.regex.test(fragCopy)) continue
+      if (regexNode.node._nodeState.matchRemains) {
         while (frags.length) {
-          var __frag = safeDecodeURIComponent(frags.shift())
-          if (__frag === false) return null
-          _frag += '/' + __frag
+          var remain = safeDecodeURIComponent(frags.shift())
+          if (remain === false) return null
+          fragCopy += '/' + remain
         }
       }
-      if (regexNode.param) params[regexNode.param] = _frag
+      if (regexNode.param) params[regexNode.param] = fragCopy
       child = regexNode.node
       break
     }
@@ -139,48 +144,75 @@
   }
 
   function parseNode (parentNode, frag, flags) {
+    var res = null
+    var regex = ''
+    var prefix = ''
+    var parameter = ''
+    var matchRemains = false
     var childNodes = parentNode._nodeState.childNodes
+    var regexNames = parentNode._nodeState.regexNames
+    var regexNodes = parentNode._nodeState.regexNodes
 
-    // simple string node
-    if (isValidSlug(frag)) {
-      if (!childNodes[frag]) childNodes[frag] = new Node(frag)
+    if (childNodes[frag]) return childNodes[frag]
+    checkMatchRegex(frag, '', parentNode._nodeState)
+
+    if ((res = parameterReg.exec(frag))) {
+      // case: `prefix:name(regex)`
+      prefix = res[1]
+      parameter = res[2].slice(1)
+      regex = res[3]
+      if (regex && !regexReg.test(regex)) {
+        throw new Error('Can not parse "' + regex + '" as regex pattern')
+      }
+    } else if ((res = regexReg.exec(frag))) {
+      // case: `prefix(regex)`
+      prefix = res[1]
+      regex = res[2]
+    } else if (sepReg.test(frag)) {
+      // case: `a|b|c`
+      regex = wrapSepExp(frag)
+    } else if (maybeRegex.test(frag)) {
+      throw new Error('Can not parse "' + frag + '"')
+    } else {
+      // case: other simple string node
+      childNodes[frag] = new Node(parentNode, frag)
       return childNodes[frag]
     }
 
-    var regexChildNodes = parentNode._nodeState.regexChildNodes
-    var lastRegexNode = regexChildNodes[regexChildNodes.length - 1]
-    if (lastRegexNode && lastRegexNode.node._nodeState.matchRemaining) {
-      throw new Error('Can not define more regex pattern while "*" pattern defined.')
+    if (regex === '(*)') {
+      regex = '(.*)'
+      matchRemains = true
     }
 
-    // Find a parameter name for the string
-    var prefix = ''
-    var parameter = ''
-    var regex = frag
-    var matchRemaining = false
-    var _frag = parameterReg.exec(frag)
-
-    if (_frag) {
-      prefix = _frag[1]
-      parameter = _frag[2].slice(1)
-      regex = _frag[3]
-    }
-
-    if (regex === '*' || regex === '(*)') {
-      regex = '.*'
-      matchRemaining = true
-    }
-    if (regex) regex = wrapRegex(regex)
-    // normalize frag
-    frag = prefix + '|' + regex
-    var regexNames = parentNode._nodeState.regexNames
+    if (regex) regex = '^' + regex + '$'
+    // normalize frag as regex node name
+    var regexName = prefix + ':' + regex
     // if regex node exist
-    if (regexNames[frag]) return regexChildNodes[regexNames[frag]].node
+    if (regexNames[regexName]) return regexNodes[regexNames[regexName]].node
 
-    var node = new Node(frag, matchRemaining)
-    regexNames[frag] = '' + regexChildNodes.length
-    regexChildNodes.push(new RegexNode(node, prefix, parameter, regex && new RegExp(regex, flags)))
+    if (prefix) checkMatchRegex(frag, prefix, parentNode._nodeState)
+    var node = new Node(parentNode, regexName, matchRemains)
+    if (regex) regex = new RegExp(regex, flags)
+    regexNames[regexName] = '' + regexNodes.length
+    regexNodes.push(new RegexNode(node, prefix, parameter, regex))
     return node
+  }
+
+  function checkMatchRegex (frag, prefix, parentNodeState) {
+    var regexName = parentNodeState.regexNames[prefix + ':^(.*)$']
+    if (regexName) {
+      var pattern = parentNodeState.regexNodes[regexName].node._nodeState.pattern
+      throw new Error('Can not define "' + frag + '" after "' + pattern + '".')
+    }
+  }
+
+  function wrapSepExp (str) {
+    var res = str.split('|')
+    for (var i = 0, len = res.length; i < len; i++) {
+      if (!res[i]) throw new Error('Can not parse "' + str + '" as separated pattern')
+      res[i] = res[i].replace(escapeReg, '\\$&')
+    }
+    return '(' + res.join('|') + ')'
   }
 
   function safeDecodeURIComponent (string) {
@@ -191,15 +223,7 @@
     }
   }
 
-  function isValidSlug (str) {
-    return str === '' || slugReg.test(str)
-  }
-
-  function wrapRegex (str) {
-    return '^' + str.replace(/^\(?/, '(').replace(/\)?$/, ')') + '$'
-  }
-
   Trie.NAME = 'Trie'
-  Trie.VERSION = 'v1.1.1'
+  Trie.VERSION = 'v1.2.0'
   return Trie
 }))
