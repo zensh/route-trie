@@ -199,9 +199,9 @@
   }
 
   function checkMatchRegex (frag, prefix, parentNodeState) {
-    var regexName = parentNodeState.regexNames[prefix + ':^(.*)$']
-    if (regexName) {
-      var pattern = parentNodeState.regexNodes[regexName].node._nodeState.pattern
+    var regexNode = parentNodeState.regexNames[prefix + ':^(.*)$']
+    if (regexNode) {
+      var pattern = parentNodeState.regexNodes[regexNode].node._nodeState.pattern
       throw new Error('Can not define "' + frag + '" after "' + pattern + '".')
     }
   }

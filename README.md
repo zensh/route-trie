@@ -9,8 +9,6 @@ A trie-based URL router.
 
 ### [Trie-based request routing](http://blog.vulcanproxy.com/trie-based-http-requests-routing/)
 
-**It is a different implementation from [routington](https://github.com/pillarjs/routington)**
-
 route-trie is a [trie](http://en.wikipedia.org/wiki/Trie)-based URL router.
 Its goal is only to define and match URLs.
 It does not handle methods, headers, controllers, views, etc., in anyway.
@@ -70,15 +68,79 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
 
 - `pattern`: {String}, each fragment of the pattern, delimited by a `/`, can have the following signature:
 
-  - `string` - ex `/post`
-  - `string|string` - `|` separated strings, ex `/post|task`
-  - `:name` - Wildcard route matched to a name, ex `/:type`
-  - `prefix:name` - Wildcard route matched to a name, ex `/api:type`
-  - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
-  - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
-  - `prefix:name(regex)`- Named regular expression match ex `/api:type/:id([a-z0-9]{6})`
-  - `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
-  - `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
+  - `string` - simple string.
+
+    Define `/post` will matched:
+    ```
+    '/post'
+    ```
+
+  - `string|string` - `|` separated strings.
+
+    Define `/post|task` will matched:
+    ```
+    '/post'
+    '/task'
+    ```
+
+  - `:name` - Wildcard route matched to a name.
+
+    Define `/:type` will matched:
+    ```
+    '/post', with params `{type: 'post'}`
+    '/task', with params `{type: 'task'}`
+    ```
+
+  - `prefix:name` - Wildcard route matched to a name.
+
+    Define `/api:type` will matched:
+    ```
+    '/apipost', with params `{type: 'post'}`
+    '/apitask', with params `{type: 'task'}`
+    ```
+
+  - `(regex)` - A regular expression match without saving the parameter (not recommended).
+
+    Define `/(post|task)`  will matched:
+    ```
+    '/post'
+    '/task'
+    ```
+
+    Define `/([a-z0-9]{6})` will matched:
+    ```
+    '/abcdef'
+    '/123456'
+    ```
+
+  - `:name(regex)`- Named regular expression match.
+
+    Define `/:type/:id([a-z0-9]{6})` will matched:
+    ```
+    '/post/abcdef', with params `{type: 'post', id: 'abcdef'}`
+    '/task/123456', with params `{type: 'task', id: '123456'}`
+    ```
+
+  - `prefix:name(regex)`- Named regular expression match.
+
+    Define `/api:type/id:id([a-z0-9]{6})` will matched:
+    ```
+    '/apipost/idabcdef', with params `{type: 'post', id: 'abcdef'}`
+    '/apitask/id123456', with params `{type: 'task', id: '123456'}`
+    ```
+
+  - `(*)` - Match remaining path without saving the parameter (not recommended).
+
+    Define `/(*)` will match all path.
+
+  - `:name(*)`- Named regular expression match, match remaining path.
+
+    Define `/:type/:other(*)` will matched:
+    ```
+    '/post/abcdef', with params `{type: 'post', other: 'abcdef'}`
+    '/post/abcdef/ghi', with params `{type: 'post', other: 'abcdef/ghi'}`
+    '/a/b/c/d/e', with params `{type: 'a', other: 'b/c/d/e'}`
+    ```
 
 return a `node` object.
 
