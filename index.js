@@ -14,7 +14,7 @@
 
   var sepReg = /\|/
   var multiSlashReg = /(\/){2,}/
-  var regexReg = /^(.*)(\(.+\))$/
+  var regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
   var maybeRegex = /[?^{}()|[\]\\]/
   var parameterReg = /^(.*)(\:\w+\b)(.*)$/
   var escapeReg = /[.*+?^${}()|[\]\\]/g
@@ -224,6 +224,6 @@
   }
 
   Trie.NAME = 'Trie'
-  Trie.VERSION = 'v1.2.0'
+  Trie.VERSION = 'v1.2.1'
   return Trie
 }))
