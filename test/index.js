@@ -62,6 +62,9 @@ describe('route-trie', function () {
 
       var child = trie.define('/a/([0-9a-fA-F]{24})/b')
       assert.strictEqual(child._nodeState.parentNode, node)
+
+      node = trie.define('/a/(abc(cat|dog))')
+      assert.strictEqual(node._nodeState.parentNode, parent)
     })
 
     it('regex pattern with prefix', function () {
