@@ -146,12 +146,41 @@ return a `node` object.
 
 ```js
 var node = trie.define('/:type/:id([a-z0-9]{6})')
-// assert(node._nodeState.pattern === '/:type/:id([a-z0-9]{6})')
-// assert(node !== trie.define('/:type'))
-// assert(node !== trie.define('/post'))
-// assert(node === trie.define('/:type/:id([a-z0-9]{6})'))
-// assert(trie.define('/:type') === trie.define('/:type1'))
+assert(node._nodeState.pattern === '/:type/:id([a-z0-9]{6})')
+assert(node !== trie.define('/:type'))
+assert(node !== trie.define('/post'))
+assert(node === trie.define('/:type/:id([a-z0-9]{6})'))
+assert(trie.define('/:type') === trie.define('/:type1'))
 ```
+
+**Notice for regex pattern:**
+
+```js
+var trie = new Trie()
+var node = trie.define('/abc/([0-9]{2})')
+assert(trie.match('/abc/47').node === node)
+
+var trie = new Trie()
+var node = trie.define('/abc/(\d{2})')
+trie.match('/abc/47')  // null
+assert(trie.match('/abc/dd').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/([a-z]{2})')
+assert(trie.match('/abc/ab').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/(\w{2})')
+trie.match('/abc/ab')  // null
+assert(trie.match('/abc/ww').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/(\\w{2})')
+assert(trie.match('/abc/ab').node === node)
+```
+
+Due to JS [String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/(\d{2})') === trie.define('/abc/(d{2})')`.
+`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
 
 ### Trie.prototype.match(path[, multiMatch])
 
