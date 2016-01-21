@@ -121,6 +121,13 @@ describe('route-trie', function () {
       assert.strictEqual(child, trie.define('/a/:x/c'))
     })
 
+    it('pattern vs named pattern', function () {
+      var trie = new Trie()
+
+      assert.strictEqual(trie.define('/path/:name([0-9])'), trie.define('/path/([0-9])'))
+      assert.notStrictEqual(trie.define('/path/:name([0-9a-fA-F])'), trie.define('/path/:name([0-9a-f])'))
+    })
+
     it('named pattern with prefix', function () {
       var trie = new Trie()
 
