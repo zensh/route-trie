@@ -339,6 +339,22 @@ describe('route-trie', function () {
       assert.strictEqual(trie.match('/'), null)
 
       trie = new Trie()
+      node = trie.define('/((post|task)s?)/([\\w\\d]{6})')
+      assert.deepEqual(trie.match('/post/a12345').params, {})
+      assert.strictEqual(trie.match('/post/a12345').node, node)
+      assert.deepEqual(trie.match('/posts/a12345').params, {})
+      assert.strictEqual(trie.match('/posts/a12345').node, node)
+      assert.deepEqual(trie.match('/task/a12345').params, {})
+      assert.strictEqual(trie.match('/task/a12345').node, node)
+      assert.deepEqual(trie.match('/tasks/a12345').params, {})
+      assert.strictEqual(trie.match('/tasks/a12345').node, node)
+      assert.strictEqual(trie.match('/event/a12345'), null)
+      assert.strictEqual(trie.match('/task/a123456'), null)
+      assert.strictEqual(trie.match('/task/a12345/6'), null)
+      assert.strictEqual(trie.match('/post'), null)
+      assert.strictEqual(trie.match('/'), null)
+
+      trie = new Trie()
       node = trie.define('/:type(post|task)/:id([1-9a-z]{6})')
       assert.deepEqual(trie.match('/post/a12345').params, {
         type: 'post',
@@ -350,6 +366,19 @@ describe('route-trie', function () {
         id: 'a12345'
       })
       assert.strictEqual(trie.match('/task/a12345').node, node)
+
+      trie = new Trie()
+      node = trie.define('/:type((post|task)s?)/:id([\\w\\d]{6})')
+      assert.deepEqual(trie.match('/post/a12345').params, {
+        type: 'post',
+        id: 'a12345'
+      })
+      assert.strictEqual(trie.match('/post/a12345').node, node)
+      assert.deepEqual(trie.match('/tasks/a12345').params, {
+        type: 'tasks',
+        id: 'a12345'
+      })
+      assert.strictEqual(trie.match('/tasks/a12345').node, node)
 
       trie = new Trie()
       var node1 = trie.define('/:type')
