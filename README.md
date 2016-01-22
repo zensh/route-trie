@@ -99,7 +99,7 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
     '/apitask', with params `{type: 'task'}`
     ```
 
-  - `(regex)` - A regular expression match without saving the parameter (not recommended).
+  - `(regex)` - A regular expression match without saving the parameter (not recommended). (Also see note below.)
 
     Define `/(post|task)`  will matched:
     ```
@@ -121,7 +121,7 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
     '/task/123456', with params `{type: 'task', id: '123456'}`
     ```
 
-  - `prefix:name(regex)`- Named regular expression match.
+  - `prefix:name(regex)`- Named regular expression match. (Also see note below.)
 
     Define `/api:type/id:id([a-z0-9]{6})` will matched:
     ```
@@ -142,7 +142,7 @@ Define a `node` for the `pattern`, The same pattern will always return the same 
     '/a/b/c/d/e', with params `{type: 'a', other: 'b/c/d/e'}`
     ```
 
-return a `node` object.
+Returns a `node` object:
 
 ```js
 var node = trie.define('/:type/:id([a-z0-9]{6})')
@@ -155,32 +155,30 @@ assert(trie.define('/:type') === trie.define('/:type1'))
 
 **Notice for regex pattern:**
 
+As mentioned above, you may use regular expressions defining node:
+
 ```js
-var trie = new Trie()
 var node = trie.define('/abc/([0-9]{2})')
 assert(trie.match('/abc/47').node === node)
+```
 
-var trie = new Trie()
+But due to [JavaScript String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/(\d{2})') === trie.define('/abc/(d{2})')`.
+`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
+
+```js
 var node = trie.define('/abc/(\d{2})')
 trie.match('/abc/47')  // null
 assert(trie.match('/abc/dd').node === node)
+```
 
-var trie = new Trie();
-var node = trie.define('/abc/([a-z]{2})')
-assert(trie.match('/abc/ab').node === node)
+The same for `\w`, `\S`, etc.
 
-var trie = new Trie();
-var node = trie.define('/abc/(\w{2})')
-trie.match('/abc/ab')  // null
-assert(trie.match('/abc/ww').node === node)
+To use backslash (`\`) in regular expression you have to escape it manually:
 
-var trie = new Trie();
+```js
 var node = trie.define('/abc/(\\w{2})')
 assert(trie.match('/abc/ab').node === node)
 ```
-
-Due to JS [String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/(\d{2})') === trie.define('/abc/(d{2})')`.
-`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
 
 ### Trie.prototype.match(path[, multiMatch])
 
