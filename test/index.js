@@ -2,7 +2,7 @@
 /*global describe, it*/
 
 var assert = require('assert')
-var Trie = require('../index.js')
+var Trie = require('..')
 
 describe('route-trie', function () {
   describe('trie.define', function () {

@@ -224,6 +224,7 @@
   }
 
   Trie.NAME = 'Trie'
-  Trie.VERSION = 'v1.2.1'
+  Trie.VERSION = 'v1.2.3'
+  Trie.safeDecodeURIComponent = safeDecodeURIComponent
   return Trie
 }))
