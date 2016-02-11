@@ -4,8 +4,8 @@
 
 const sepReg = /\|/
 const multiSlashReg = /(\/){2,}/
-const regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
 const maybeRegex = /[?^{}()|[\]\\]/
+const regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
 const parameterReg = /^(.*)(\:\w+\b)(.*)$/
 const escapeReg = /[.*+?^${}()|[\]\\]/g
 const trimSlashReg = /(^\/)|(\/$)/g
@@ -223,6 +223,7 @@ function safeDecodeURIComponent (string) {
   }
 }
 
-export const NAME = 'Trie'
-export const VERSION = 'v1.2.3'
-export { Trie as default, safeDecodeURIComponent }
+Trie.NAME = 'Trie'
+Trie.VERSION = 'v1.2.4'
+Trie.safeDecodeURIComponent = safeDecodeURIComponent
+export default Trie

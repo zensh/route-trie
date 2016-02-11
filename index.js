@@ -14,8 +14,8 @@
 
   var sepReg = /\|/
   var multiSlashReg = /(\/){2,}/
-  var regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
   var maybeRegex = /[?^{}()|[\]\\]/
+  var regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
   var parameterReg = /^(.*)(\:\w+\b)(.*)$/
   var escapeReg = /[.*+?^${}()|[\]\\]/g
   var trimSlashReg = /(^\/)|(\/$)/g
