@@ -1,12 +1,12 @@
 'use strict'
-/*global describe, it*/
 
 var assert = require('assert')
+var tman = require('tman')
 var Trie = require('..')
 
-describe('route-trie', function () {
-  describe('trie.define', function () {
-    it('root pattern', function () {
+tman.suite('route-trie', function () {
+  tman.suite('trie.define', function () {
+    tman.it('root pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/')
@@ -17,7 +17,7 @@ describe('route-trie', function () {
       assert.strictEqual(trie.root._nodeState.parentNode, null)
     })
 
-    it('simple pattern', function () {
+    tman.it('simple pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/b')
@@ -33,7 +33,7 @@ describe('route-trie', function () {
       assert.strictEqual(child._nodeState.parentNode, node)
     })
 
-    it('separated pattern', function () {
+    tman.it('separated pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/b|c|d')
@@ -51,7 +51,7 @@ describe('route-trie', function () {
       assert.strictEqual(child2._nodeState.parentNode._nodeState.parentNode, parent)
     })
 
-    it('regex pattern', function () {
+    tman.it('regex pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/([0-9a-fA-F]{24})')
@@ -67,7 +67,7 @@ describe('route-trie', function () {
       assert.strictEqual(node._nodeState.parentNode, parent)
     })
 
-    it('regex pattern with prefix', function () {
+    tman.it('regex pattern with prefix', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/id([0-9a-fA-F]{24})')
@@ -86,7 +86,7 @@ describe('route-trie', function () {
       assert.strictEqual(child._nodeState.parentNode, node)
     })
 
-    it('regex pattern with special prefix', function () {
+    tman.it('regex pattern with special prefix', function () {
       var trie = new Trie()
 
       var node = trie.define('/a')
@@ -94,7 +94,7 @@ describe('route-trie', function () {
       assert.strictEqual(trie.define('/a/正(.*)')._nodeState.parentNode, node)
     })
 
-    it('regex pattern vs separated pattern', function () {
+    tman.it('regex pattern vs separated pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/b|c')
@@ -106,7 +106,7 @@ describe('route-trie', function () {
       assert.notStrictEqual(node, node2)
     })
 
-    it('named pattern', function () {
+    tman.it('named pattern', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/:b')
@@ -121,14 +121,14 @@ describe('route-trie', function () {
       assert.strictEqual(child, trie.define('/a/:x/c'))
     })
 
-    it('pattern vs named pattern', function () {
+    tman.it('pattern vs named pattern', function () {
       var trie = new Trie()
 
       assert.strictEqual(trie.define('/path/:name([0-9])'), trie.define('/path/([0-9])'))
       assert.notStrictEqual(trie.define('/path/:name([0-9a-fA-F])'), trie.define('/path/:name([0-9a-f])'))
     })
 
-    it('named pattern with prefix', function () {
+    tman.it('named pattern with prefix', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/id:b')
@@ -145,7 +145,7 @@ describe('route-trie', function () {
       assert.strictEqual(child, trie.define('/a/id:x/c'))
     })
 
-    it('named pattern with regex', function () {
+    tman.it('named pattern with regex', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/:id([0-9a-fA-F]{24})')
@@ -160,7 +160,7 @@ describe('route-trie', function () {
       assert.strictEqual(child, trie.define('/a/:ix([0-9a-fA-F]{24})/c'))
     })
 
-    it('named pattern with prefix and regex', function () {
+    tman.it('named pattern with prefix and regex', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/pre:id([0-9a-fA-F]{24})')
@@ -176,7 +176,7 @@ describe('route-trie', function () {
       assert.strictEqual(child, trie.define('/a/pre:ix([0-9a-fA-F]{24})/c'))
     })
 
-    it('regex pattern with special prefix and regex', function () {
+    tman.it('regex pattern with special prefix and regex', function () {
       var trie = new Trie()
 
       var node = trie.define('/a')
@@ -187,7 +187,7 @@ describe('route-trie', function () {
       assert.strictEqual(trie.define('/a/pre.::id(.*)')._nodeState.parentNode, node)
     })
 
-    it('pattern match remains', function () {
+    tman.it('pattern match remains', function () {
       var trie = new Trie()
 
       var node = trie.define('(*)')
@@ -215,7 +215,7 @@ describe('route-trie', function () {
       })
     })
 
-    it('pattern match remains 2', function () {
+    tman.it('pattern match remains 2', function () {
       var trie = new Trie()
 
       var node = trie.define('/a/b(*)')
@@ -235,7 +235,7 @@ describe('route-trie', function () {
       })
     })
 
-    it('throw error when not a string', function () {
+    tman.it('throw error when not a string', function () {
       var trie = new Trie()
 
       assert.throws(function () {
@@ -247,7 +247,7 @@ describe('route-trie', function () {
       }, TypeError, 'Pattern must be string.')
     })
 
-    it('throw error when multi-slash exist', function () {
+    tman.it('throw error when multi-slash exist', function () {
       var trie = new Trie()
 
       // https://github.com/zensh/route-trie/pull/6
@@ -276,7 +276,7 @@ describe('route-trie', function () {
       }, Error, 'Multi-slash exist.')
     })
 
-    it('throw error when some strange pattern', function () {
+    tman.it('throw error when some strange pattern', function () {
       var trie = new Trie()
 
       assert.throws(function () {
@@ -297,8 +297,8 @@ describe('route-trie', function () {
     })
   })
 
-  describe('trie.match', function () {
-    it('trie.match', function () {
+  tman.suite('trie.match', function () {
+    tman.it('trie.match', function () {
       var trie = new Trie()
 
       var node = trie.define('/')
@@ -552,7 +552,7 @@ describe('route-trie', function () {
       assert.strictEqual(trie.match('/test.com:zensh/test'), null)
     })
 
-    it('trie.match, multiMatch', function () {
+    tman.it('trie.match, multiMatch', function () {
       var trie = new Trie()
 
       var node1 = trie.define('/')

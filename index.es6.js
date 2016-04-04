@@ -224,6 +224,6 @@ function safeDecodeURIComponent (string) {
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v1.2.4'
+Trie.VERSION = 'v1.2.5'
 Trie.safeDecodeURIComponent = safeDecodeURIComponent
 export default Trie
