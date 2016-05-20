@@ -16,24 +16,27 @@
   var multiSlashReg = /(\/){2,}/
   var maybeRegex = /[?^{}()|[\]\\]/
   var regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
-  var parameterReg = /^(.*)(\:\w+\b)(.*)$/
+  var parameterReg = /^(.*)(:\w+\b)(.*)$/
   var escapeReg = /[.*+?^${}()|[\]\\]/g
   var trimSlashReg = /(^\/)|(\/$)/g
 
   function Trie (flags) {
     this.flags = flags ? 'i' : ''
     this.root = new Node(null, 'root')
+    this.nodes = {}
   }
 
   Trie.prototype.define = function (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
     if (multiSlashReg.test(pattern)) throw new Error('Multi-slash exist.')
+    if (!(this.nodes[pattern] instanceof Node)) {
+      var _pattern = pattern.replace(trimSlashReg, '')
+      var node = define(this.root, _pattern.split('/'), this.flags)
 
-    var _pattern = pattern.replace(trimSlashReg, '')
-    var node = define(this.root, _pattern.split('/'), this.flags)
-
-    if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
-    return node
+      if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
+      this.nodes[pattern] = node
+    }
+    return this.nodes[pattern]
   }
 
   // the path should be normalized before match, just as path.normalize do in Node.js

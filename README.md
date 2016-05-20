@@ -4,6 +4,7 @@ A trie-based URL router.
 
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
+[![Downloads][downloads-image]][downloads-url]
 
 ### About [trie](http://en.wikipedia.org/wiki/Trie)
 
@@ -22,6 +23,7 @@ Implementations:
 
 - [toa-router](https://github.com/toajs/toa-router) A trie router for toa(server).
 - [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
+- [RotorJS](https://github.com/kuraga/rotorjs) Component-based JavaScript library for single-page applications and an example application.
 
 ### Browser Support
 
@@ -213,3 +215,6 @@ Return `matched` object:
 
 [travis-url]: https://travis-ci.org/zensh/route-trie
 [travis-image]: http://img.shields.io/travis/zensh/route-trie.svg
+
+[downloads-url]: https://npmjs.org/package/route-trie
+[downloads-image]: http://img.shields.io/npm/dm/route-trie.svg?style=flat-square

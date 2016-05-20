@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "1.2.5",
+  "version": "1.2.6",
   "license": "MIT",
   "main": "index.js",
   "jsnext:main": "index.es6.js",
@@ -24,8 +24,8 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "standard": "^6.0.8",
-    "tman": "^0.5.2"
+    "standard": "^7.1.0",
+    "tman": "^0.9.6"
   },
   "scripts": {
     "test": "standard && tman"

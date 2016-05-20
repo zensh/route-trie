@@ -6,7 +6,7 @@ const sepReg = /\|/
 const multiSlashReg = /(\/){2,}/
 const maybeRegex = /[?^{}()|[\]\\]/
 const regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
-const parameterReg = /^(.*)(\:\w+\b)(.*)$/
+const parameterReg = /^(.*)(:\w+\b)(.*)$/
 const escapeReg = /[.*+?^${}()|[\]\\]/g
 const trimSlashReg = /(^\/)|(\/$)/g
 
@@ -55,17 +55,20 @@ class Trie {
   constructor (flags) {
     this.flags = flags ? 'i' : ''
     this.root = new Node(null, 'root')
+    this.nodes = {}
   }
 
   define (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
     if (multiSlashReg.test(pattern)) throw new Error('Multi-slash exist.')
+    if (!(this.nodes[pattern] instanceof Node)) {
+      let _pattern = pattern.replace(trimSlashReg, '')
+      let node = define(this.root, _pattern.split('/'), this.flags)
 
-    let _pattern = pattern.replace(trimSlashReg, '')
-    let node = define(this.root, _pattern.split('/'), this.flags)
-
-    if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
-    return node
+      if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
+      this.nodes[pattern] = node
+    }
+    return this.nodes[pattern]
   }
 
   match (path, multiMatch) {

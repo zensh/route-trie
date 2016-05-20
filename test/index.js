@@ -235,6 +235,15 @@ tman.suite('route-trie', function () {
       })
     })
 
+    tman.it('pattern match remains and define repeatedly', function () {
+      var trie = new Trie()
+
+      var node1 = trie.define('/:filePath(*)')
+      var node2 = trie.define('/:filePath(*)')
+
+      assert.strictEqual(node1, node2)
+    })
+
     tman.it('throw error when not a string', function () {
       var trie = new Trie()
 
