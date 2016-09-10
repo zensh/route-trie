@@ -1,5 +1,5 @@
 'use strict'
-/*global module, process*/
+/* global module, process */
 var Trie = require('route-trie')
 
 var trie = new Trie()
