@@ -4,13 +4,16 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "1.2.7",
+  "version": "2.0.0",
   "license": "MIT",
   "main": "index.js",
   "jsnext:main": "index.es6.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:zensh/route-trie.git"
+  },
+  "engines": {
+    "node": ">= 4"
   },
   "homepage": "https://github.com/zensh/route-trie",
   "keywords": [
@@ -24,8 +27,8 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "standard": "^8.0.0",
-    "tman": "^1.4.3"
+    "standard": "^8.6.0",
+    "tman": "^1.6.3"
   },
   "scripts": {
     "test": "standard && tman"
