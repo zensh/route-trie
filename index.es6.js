@@ -10,16 +10,17 @@ const multiSlashReg = /(\/){2,}/
 const fixMultiSlashReg = /(\/){2,}/g
 
 class Trie {
-  constructor () {
+  constructor (options) {
+    options = options || {}
     // Ignore case when matching URL path.
-    this.ignoreCase = true
+    this.ignoreCase = options.ignoreCase !== false
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the fixed path exists.
     // Matched.FPR will returns either a fixed redirect path or an empty string.
     // For example when "/api/foo" defined and matching "/api//foo",
     // The result Matched.FPR is "/api/foo".
-    this.fpr = true
+    this.fpr = options.fixedPathRedirect !== false
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the path with (without) the trailing slash exists.
@@ -28,7 +29,7 @@ class Trie {
     // client is redirected to /foo
     // For example when "/api/foo" defined and matching "/api/foo/",
     // The result Matched.TSR is "/api/foo".
-    this.tsr = true
+    this.tsr = options.trailingSlashRedirect !== false
     this.root = new Node(null)
   }
 
@@ -136,13 +137,13 @@ class Node {
     this.name = ''
     this.allow = ''
     this.pattern = ''
+    this.regex = null
     this.endpoint = false
     this.wildcard = false
-    this.parentNode = parentNode
     this.varyChild = null
+    this.parentNode = parentNode
     this.children = Object.create(null)
     this.handlers = Object.create(null)
-    this.regex = null
   }
 
   handle (method, handler) {

@@ -10,16 +10,17 @@ const multiSlashReg = /(\/){2,}/
 const fixMultiSlashReg = /(\/){2,}/g
 
 class Trie {
-  constructor () {
+  constructor (options) {
+    options = options || {}
     // Ignore case when matching URL path.
-    this.ignoreCase = true
+    this.ignoreCase = options.ignoreCase !== false
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the fixed path exists.
     // Matched.FPR will returns either a fixed redirect path or an empty string.
     // For example when "/api/foo" defined and matching "/api//foo",
     // The result Matched.FPR is "/api/foo".
-    this.fpr = true
+    this.fpr = options.fixedPathRedirect !== false
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the path with (without) the trailing slash exists.
@@ -28,7 +29,7 @@ class Trie {
     // client is redirected to /foo
     // For example when "/api/foo" defined and matching "/api/foo/",
     // The result Matched.TSR is "/api/foo".
-    this.tsr = true
+    this.tsr = options.trailingSlashRedirect !== false
     this.root = new Node(null)
   }
 
@@ -132,7 +133,7 @@ class Matched {
 }
 
 class Node {
-  constructor (parentNode) {
+  constructor (parent) {
     this.name = ''
     this.allow = ''
     this.pattern = ''
@@ -140,7 +141,7 @@ class Node {
     this.endpoint = false
     this.wildcard = false
     this.varyChild = null
-    this.parentNode = parentNode
+    this.parent = parent
     this.children = Object.create(null)
     this.handlers = Object.create(null)
   }
@@ -161,9 +162,9 @@ class Node {
   }
 }
 
-function defineNode (parentNode, frags, ignoreCase) {
+function defineNode (parent, frags, ignoreCase) {
   let frag = frags.shift()
-  let child = parseNode(parentNode, frag, ignoreCase)
+  let child = parseNode(parent, frag, ignoreCase)
 
   if (!frags.length) {
     child.endpoint = true
@@ -189,7 +190,7 @@ function matchNode (parent, frag) {
 function parseNode (parent, frag, ignoreCase) {
   let _frag = frag
   if (doubleColonReg.test(frag)) {
-    _frag = frag.slice(1, 0)
+    _frag = frag.slice(1)
   }
   if (ignoreCase) {
     _frag = _frag.toLowerCase()
@@ -235,7 +236,7 @@ function parseNode (parent, frag, ignoreCase) {
       if (child.name !== name || child.wildcard !== node.wildcard) {
         throw new Error(`Invalid pattern: "${frag}"`)
       }
-      if (child.regex != null && child.regex.toString() !== regex) {
+      if (child.regex != null && child.regex.toString() !== node.regex.toString()) {
         throw new Error(`Invalid pattern: "${frag}"`)
       }
       return child
