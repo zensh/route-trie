@@ -1,232 +1,258 @@
 // **Github:** https://github.com/zensh/route-trie
 //
 // **License:** MIT
+'use strict'
 
-const sepReg = /\|/
+const wordReg = /^\w+$/
+const doubleColonReg = /::\w*$/
+const trimSlashReg = /^\//
 const multiSlashReg = /(\/){2,}/
-const maybeRegex = /[?^{}()|[\]\\]/
-const regexReg = /^([^\(\n\r\u2028\u2029]*)(\(.+\))$/
-const parameterReg = /^(.*)(:\w+\b)(.*)$/
-const escapeReg = /[.*+?^${}()|[\]\\]/g
-const trimSlashReg = /(^\/)|(\/$)/g
-
-class Node {
-  constructor (parentNode, frag, matchRemains) {
-    Object.defineProperty(this, '_nodeState', {
-      enumerable: false,
-      configurable: false,
-      writable: false,
-      value: new NodeState(parentNode, frag, matchRemains)
-    })
-  }
-}
-
-class NodeState {
-  constructor (parentNode, frag, matchRemains) {
-    this.name = frag
-    this.pattern = null
-    this.endpoint = false
-    this.parentNode = parentNode
-    this.matchRemains = !!matchRemains
-    this.childNodes = Object.create(null)
-    this.regexNames = Object.create(null)
-    this.regexNodes = []
-  }
-}
-
-class RegexNode {
-  constructor (node, prefix, param, regex) {
-    this.node = node
-    this.prefix = prefix || ''
-    this.param = param || ''
-    this.regex = regex || null
-  }
-}
-
-class TrieMatched {
-  constructor () {
-    this.node = null
-    this.nodes = []
-    this.params = {}
-  }
-}
+const fixMultiSlashReg = /(\/){2,}/g
 
 class Trie {
-  constructor (flags) {
-    this.flags = flags ? 'i' : ''
-    this.root = new Node(null, 'root')
-    this.nodes = {}
+  constructor (options) {
+    options = options || {}
+    // Ignore case when matching URL path.
+    this.ignoreCase = options.ignoreCase !== false
+
+    // If enabled, the trie will detect if the current path can't be matched but
+    // a handler for the fixed path exists.
+    // Matched.FPR will returns either a fixed redirect path or an empty string.
+    // For example when "/api/foo" defined and matching "/api//foo",
+    // The result Matched.FPR is "/api/foo".
+    this.fpr = options.fixedPathRedirect !== false
+
+    // If enabled, the trie will detect if the current path can't be matched but
+    // a handler for the path with (without) the trailing slash exists.
+    // Matched.TSR will returns either a redirect path or an empty string.
+    // For example if /foo/ is requested but a route only exists for /foo, the
+    // client is redirected to /foo
+    // For example when "/api/foo" defined and matching "/api/foo/",
+    // The result Matched.TSR is "/api/foo".
+    this.tsr = options.trailingSlashRedirect !== false
+    this.root = new Node(null)
   }
 
   define (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
-    if (multiSlashReg.test(pattern)) throw new Error('Multi-slash exist.')
-    if (!(this.nodes[pattern] instanceof Node)) {
-      let _pattern = pattern.replace(trimSlashReg, '')
-      let node = define(this.root, _pattern.split('/'), this.flags)
+    if (multiSlashReg.test(pattern)) throw new Error('Multi-slash existhis.')
+    let _pattern = pattern.replace(trimSlashReg, '')
+    let node = defineNode(this.root, _pattern.split('/'), this.ignoreCase)
 
-      if (node._nodeState.pattern == null) node._nodeState.pattern = pattern
-      this.nodes[pattern] = node
-    }
-    return this.nodes[pattern]
+    if (node.pattern === '') node.pattern = pattern
+    return node
   }
 
-  match (path, multiMatch) {
+  match (path) {
     // the path should be normalized before match, just as path.normalize do in Node.js
     if (typeof path !== 'string') throw new TypeError('Path must be string.')
-    path = path.replace(trimSlashReg, '')
+    if (!path || path[0] !== '/') {
+      throw new Error(`Path is not start with "/": "${path}"`)
+    }
+    let fixedLen = path.length
+    if (this.fpr) {
+      path = path.replace(fixMultiSlashReg, '')
+      fixedLen -= path.length
+    }
 
-    let node = this.root
-    let frags = path.split('/')
-    let matched = new TrieMatched()
-
-    while (frags.length) {
-      node = matchNode(node, frags, matched.params, this.flags)
-      // matched
-      if (node) {
-        if (multiMatch && node._nodeState.endpoint) matched.nodes.push(node)
+    let i = 0
+    let start = 1
+    let end = path.length
+    let res = new Matched()
+    let parent = this.root
+    let _path = path + '/'
+    while (true) {
+      if (++i > end) {
+        break
+      }
+      if (_path[i] !== '/') {
         continue
       }
-      // not match
-      return multiMatch ? matched : null
+      let frag = _path.slice(start, i)
+      let node = matchNode(parent, frag)
+      if (this.ignoreCase && node == null) {
+        node = matchNode(parent, frag.toLowerCase())
+      }
+      if (node == null) {
+        // TrailingSlashRedirect: /acb/efg/ -> /acb/efg
+        if (this.tsr && frag === '' && i === end && parent.endpoint) {
+          res.tsr = path.slice(0, end - 1)
+          if (this.fpr && fixedLen > 0) {
+            res.fpr = res.tsr
+            res.tsr = ''
+          }
+        }
+        return res
+      }
+
+      parent = node
+      if (parent.name) {
+        if (res.params == null) {
+          res.params = {}
+        }
+        if (parent.wildcard) {
+          res.params[parent.name] = path.slice(start, end)
+          break
+        } else {
+          res.params[parent.name] = frag
+        }
+      }
+      start = i + 1
     }
 
-    matched.node = node
-    if (!multiMatch && !node._nodeState.endpoint) return null
-    return matched
-  }
-}
-
-function define (parentNode, frags, flags) {
-  let frag = frags.shift()
-  let child = parseNode(parentNode, frag, flags)
-
-  if (!frags.length) {
-    child._nodeState.endpoint = true
-    return child
-  }
-  if (child._nodeState.matchRemains) {
-    throw new Error('Can not define regex pattern after "(*)" pattern.')
-  }
-  return define(child, frags, flags)
-}
-
-function matchNode (node, frags, params, flags) {
-  let frag = safeDecodeURIComponent(frags.shift())
-  if (frag === false) return null
-
-  let childNodes = node._nodeState.childNodes
-  let child = childNodes[flags ? frag.toLowerCase() : frag]
-  if (child) return child
-
-  let regexNodes = node._nodeState.regexNodes
-
-  for (let fragCopy, regexNode, i = 0, len = regexNodes.length; i < len; i++) {
-    fragCopy = frag
-    regexNode = regexNodes[i]
-
-    if (regexNode.prefix) {
-      if (fragCopy.indexOf(regexNode.prefix) !== 0) continue
-      fragCopy = fragCopy.slice(regexNode.prefix.length)
-    }
-
-    if (regexNode.regex && !regexNode.regex.test(fragCopy)) continue
-    if (regexNode.node._nodeState.matchRemains) {
-      while (frags.length) {
-        let remain = safeDecodeURIComponent(frags.shift())
-        if (remain === false) return null
-        fragCopy += '/' + remain
+    if (parent.endpoint) {
+      res.node = parent
+      if (this.fpr && fixedLen > 0) {
+        res.fpr = path
+        res.node = null
+      }
+    } else if (this.tsr && parent.children[''] != null) {
+      // TrailingSlashRedirect: /acb/efg -> /acb/efg/
+      res.tsr = path + '/'
+      if (this.fpr && fixedLen > 0) {
+        res.fpr = res.tsr
+        res.tsr = ''
       }
     }
-    if (regexNode.param) params[regexNode.param] = fragCopy
-    child = regexNode.node
-    break
+    return res
+  }
+}
+
+class Matched {
+  constructor () {
+    // Either a Node pointer when matched or nil
+    this.node = null
+    this.params = null
+    // If FixedPathRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.fpr = ''
+    // If TrailingSlashRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.tsr = ''
+  }
+}
+
+class Node {
+  constructor (parentNode) {
+    this.name = ''
+    this.allow = ''
+    this.pattern = ''
+    this.regex = null
+    this.endpoint = false
+    this.wildcard = false
+    this.varyChild = null
+    this.parentNode = parentNode
+    this.children = Object.create(null)
+    this.handlers = Object.create(null)
   }
 
+  handle (method, handler) {
+    if (typeof handler !== 'function') {
+      throw new TypeError('handler must be function')
+    }
+    if (this.handlers[method]) {
+      throw new Error(`"${method}" already defined`)
+    }
+    this.handlers[method] = handler
+    if (this.allow === '') {
+      this.allow = method
+    } else {
+      this.allow += ', ' + method
+    }
+  }
+}
+
+function defineNode (parentNode, frags, ignoreCase) {
+  let frag = frags.shift()
+  let child = parseNode(parentNode, frag, ignoreCase)
+
+  if (!frags.length) {
+    child.endpoint = true
+    return child
+  }
+  if (child.wildcard) {
+    throw new Error(`Can not define pattern after wildcard: "${child.pattern}"`)
+  }
+  return defineNode(child, frags, ignoreCase)
+}
+
+function matchNode (parent, frag) {
+  let child = parent.children[frag]
+  if (child == null) {
+    child = parent.varyChild
+    if (child != null && child.regex != null && !child.regex.test(frag)) {
+      child = null
+    }
+  }
   return child
 }
 
-function parseNode (parentNode, frag, flags) {
-  let res = null
-  let regex = ''
-  let prefix = ''
-  let parameter = ''
-  let matchRemains = false
-  let childNodes = parentNode._nodeState.childNodes
-  let regexNames = parentNode._nodeState.regexNames
-  let regexNodes = parentNode._nodeState.regexNodes
+function parseNode (parent, frag, ignoreCase) {
+  let _frag = frag
+  if (doubleColonReg.test(frag)) {
+    _frag = frag.slice(1, 0)
+  }
+  if (ignoreCase) {
+    _frag = _frag.toLowerCase()
+  }
 
-  if (childNodes[frag]) return childNodes[frag]
-  checkMatchRegex(frag, '', parentNode._nodeState)
+  if (parent.children[_frag] != null) return parent.children[_frag]
 
-  if ((res = parameterReg.exec(frag))) {
-    // case: `prefix:name(regex)`
-    prefix = res[1]
-    parameter = res[2].slice(1)
-    regex = res[3]
-    if (regex && !regexReg.test(regex)) {
-      throw new Error('Can not parse "' + regex + '" as regex pattern')
+  let node = new Node(parent)
+
+  if (frag === '') {
+    parent.children[''] = node
+  } else if (doubleColonReg.test(frag)) {
+    // pattern "/a/::" should match "/a/:"
+    // pattern "/a/::bc" should match "/a/:bc"
+    // pattern "/a/::/bc" should match "/a/:/bc"
+    parent.children[_frag] = node
+  } else if (frag[0] === ':') {
+    let regex
+    let name = frag.slice(1)
+    let trailing = name[name.length - 1]
+    if (trailing === ')') {
+      let index = name.indexOf('(')
+      if (index > 0) {
+        regex = name.slice(index + 1, name.length - 1)
+        if (regex.length > 0) {
+          name = name.slice(0, index)
+          node.regex = new RegExp(regex)
+        } else {
+          throw new Error(`Invalid pattern: "${frag}"`)
+        }
+      }
+    } else if (trailing === '*') {
+      name = name.slice(0, name.length - 1)
+      node.wildcard = true
     }
-  } else if ((res = regexReg.exec(frag))) {
-    // case: `prefix(regex)`
-    prefix = res[1]
-    regex = res[2]
-  } else if (sepReg.test(frag)) {
-    // case: `a|b|c`
-    regex = wrapSepExp(frag)
-  } else if (maybeRegex.test(frag)) {
-    throw new Error('Can not parse "' + frag + '"')
+    // name must be word characters `[0-9A-Za-z_]`
+    if (!wordReg.test(name)) {
+      throw new Error(`Invalid pattern: "${frag}"`)
+    }
+    node.name = name
+    let child = parent.varyChild
+    if (child != null) {
+      if (child.name !== name || child.wildcard !== node.wildcard) {
+        throw new Error(`Invalid pattern: "${frag}"`)
+      }
+      if (child.regex != null && child.regex.toString() !== regex) {
+        throw new Error(`Invalid pattern: "${frag}"`)
+      }
+      return child
+    }
+
+    parent.varyChild = node
+  } else if (frag[0] === '*' || frag[0] === '(' || frag[0] === ')') {
+    throw new Error(`Invalid pattern: "${frag}"`)
   } else {
-    // case: other simple string node
-    childNodes[frag] = new Node(parentNode, frag)
-    return childNodes[frag]
+    parent.children[_frag] = node
   }
-
-  if (regex === '(*)') {
-    regex = '(.*)'
-    matchRemains = true
-  }
-
-  if (regex) regex = '^' + regex + '$'
-  // normalize frag as regex node name
-  let regexName = prefix + ':' + regex
-  // if regex node exist
-  if (regexNames[regexName]) return regexNodes[regexNames[regexName]].node
-
-  if (prefix) checkMatchRegex(frag, prefix, parentNode._nodeState)
-  let node = new Node(parentNode, regexName, matchRemains)
-  if (regex) regex = new RegExp(regex, flags)
-  regexNames[regexName] = '' + regexNodes.length
-  regexNodes.push(new RegexNode(node, prefix, parameter, regex))
   return node
 }
 
-function checkMatchRegex (frag, prefix, parentNodeState) {
-  let regexNode = parentNodeState.regexNames[prefix + ':^(.*)$']
-  if (regexNode) {
-    let pattern = parentNodeState.regexNodes[regexNode].node._nodeState.pattern
-    throw new Error('Can not define "' + frag + '" after "' + pattern + '".')
-  }
-}
-
-function wrapSepExp (str) {
-  let res = str.split('|')
-  for (let i = 0, len = res.length; i < len; i++) {
-    if (!res[i]) throw new Error('Can not parse "' + str + '" as separated pattern')
-    res[i] = res[i].replace(escapeReg, '\\$&')
-  }
-  return '(' + res.join('|') + ')'
-}
-
-function safeDecodeURIComponent (string) {
-  try {
-    return decodeURIComponent(string)
-  } catch (err) {
-    return false
-  }
-}
-
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v1.2.7'
-Trie.safeDecodeURIComponent = safeDecodeURIComponent
+Trie.VERSION = 'v2.0.0'
+Trie.Trie = Trie
+
 export default Trie
