@@ -9,7 +9,7 @@ tman.suite('trie.define', function () {
     let trie = new Trie()
 
     let node = trie.define('/')
-    assert.strictEqual(node, trie.define(''))
+    assert.strictEqual(trie.define(''), node)
     assert.strictEqual(node.pattern, '/')
     assert.strictEqual(node.name, '')
 
@@ -22,8 +22,8 @@ tman.suite('trie.define', function () {
 
     let node = trie.define('/a/b')
     assert.strictEqual(node.name, '')
-    assert.strictEqual(node, trie.define('a/b'))
     assert.strictEqual(node.pattern, '/a/b')
+    assert.strictEqual(node, trie.define('a/b'))
     assert.notEqual(node, trie.define('a/b/'))
     assert.notEqual(node, trie.define('/a/b/'))
     assert.strictEqual(trie.define('/a/b/'), trie.define('a/b/'))
@@ -201,295 +201,274 @@ tman.suite('trie.define', function () {
   })
 })
 
-tman.suite.skip('trie.match', function () {
-  tman.it('trie.match', function () {
+tman.suite('trie.match', function () {
+  tman.it('root pattern', function () {
     let trie = new Trie()
-
     let node = trie.define('/')
-    let match = trie.match('/')
-    assert.strictEqual(node, match.node)
-    assert.deepEqual(match.params, {})
-    assert.strictEqual(match.node, trie.match('').node)
-    assert.strictEqual(null, trie.match('/path'))
-    assert.strictEqual(null, trie.match('path'))
+    let res = trie.match('/')
 
-    trie = new Trie()
-    node = trie.define('/:type')
-    match = trie.match('/post')
-    assert.deepEqual(match.params, {
-      type: 'post'
-    })
-    assert.strictEqual(node, match.node)
-    assert.strictEqual(node, trie.match('/task').node)
+    assert.deepEqual(res.params, {})
+    assert.strictEqual(node, res.node)
 
-    trie = new Trie()
-    node = trie.define('/:type/:id([1-9a-z]{6})')
-    match = trie.match('/post/a12345')
-    assert.deepEqual(match.params, {
-      type: 'post',
-      id: 'a12345'
-    })
-    assert.strictEqual(node, match.node)
-    assert.strictEqual(node, trie.match('/task/aaabbb').node)
-    assert.strictEqual(null, trie.match('/task/aaabbbc'))
-    assert.strictEqual(null, trie.match('/task/aaabbb/ccc'))
-    assert.strictEqual(null, trie.match('/task/aaabb'))
-    assert.strictEqual(null, trie.match('/task'))
-
-    trie = new Trie()
-    node = trie.define('/post|task/([1-9a-z]{6})')
-    assert.strictEqual(trie.define('/(post|task)/([1-9a-z]{6})'), node)
-    assert.deepEqual(trie.match('/post/a12345').params, {})
-    assert.strictEqual(trie.match('/post/a12345').node, node)
-    assert.deepEqual(trie.match('/task/a12345').params, {})
-    assert.strictEqual(trie.match('/task/a12345').node, node)
-    assert.strictEqual(trie.match('/event/a12345'), null)
-    assert.strictEqual(trie.match('/task/a123456'), null)
-    assert.strictEqual(trie.match('/task/a12345/6'), null)
-    assert.strictEqual(trie.match('/post'), null)
-    assert.strictEqual(trie.match('/'), null)
-
-    trie = new Trie()
-    node = trie.define('/((post|task)s?)/([\\w\\d]{6})')
-    assert.deepEqual(trie.match('/post/a12345').params, {})
-    assert.strictEqual(trie.match('/post/a12345').node, node)
-    assert.deepEqual(trie.match('/posts/a12345').params, {})
-    assert.strictEqual(trie.match('/posts/a12345').node, node)
-    assert.deepEqual(trie.match('/task/a12345').params, {})
-    assert.strictEqual(trie.match('/task/a12345').node, node)
-    assert.deepEqual(trie.match('/tasks/a12345').params, {})
-    assert.strictEqual(trie.match('/tasks/a12345').node, node)
-    assert.strictEqual(trie.match('/event/a12345'), null)
-    assert.strictEqual(trie.match('/task/a123456'), null)
-    assert.strictEqual(trie.match('/task/a12345/6'), null)
-    assert.strictEqual(trie.match('/post'), null)
-    assert.strictEqual(trie.match('/'), null)
-
-    trie = new Trie()
-    node = trie.define('/:type(post|task)/:id([1-9a-z]{6})')
-    assert.deepEqual(trie.match('/post/a12345').params, {
-      type: 'post',
-      id: 'a12345'
-    })
-    assert.strictEqual(trie.match('/post/a12345').node, node)
-    assert.deepEqual(trie.match('/task/a12345').params, {
-      type: 'task',
-      id: 'a12345'
-    })
-    assert.strictEqual(trie.match('/task/a12345').node, node)
-
-    trie = new Trie()
-    node = trie.define('/:type((post|task)s?)/:id([\\w\\d]{6})')
-    assert.deepEqual(trie.match('/post/a12345').params, {
-      type: 'post',
-      id: 'a12345'
-    })
-    assert.strictEqual(trie.match('/post/a12345').node, node)
-    assert.deepEqual(trie.match('/tasks/a12345').params, {
-      type: 'tasks',
-      id: 'a12345'
-    })
-    assert.strictEqual(trie.match('/tasks/a12345').node, node)
-
-    trie = new Trie()
-    let node1 = trie.define('/:type')
-    let node2 = trie.define('/:type/:id')
-    assert.deepEqual(trie.match('/post').params, {
-      type: 'post'
-    })
-    assert.strictEqual(trie.match('/post').node, node1)
-    assert.deepEqual(trie.match('/task').params, {
-      type: 'task'
-    })
-    assert.strictEqual(trie.match('/task').node, node1)
-    assert.deepEqual(trie.match('/post/123456').params, {
-      type: 'post',
-      id: '123456'
-    })
-    assert.strictEqual(trie.match('/post/123456').node, node2)
-    assert.deepEqual(trie.match('/task/123456').params, {
-      type: 'task',
-      id: '123456'
-    })
-    assert.strictEqual(trie.match('/task/123456').node, node2)
-
-    trie = new Trie()
-    node1 = trie.define('/:user(user|admin)/:id([1-9]{6})')
-    node2 = trie.define('/:type(post|task)/:id([a-z]{6})')
-    assert.deepEqual(trie.match('/post/aaaaaa').params, {
-      type: 'post',
-      id: 'aaaaaa'
-    })
-    assert.strictEqual(trie.match('/post/aaaaaa').node, node2)
-    assert.deepEqual(trie.match('/task/aaaaaa').params, {
-      type: 'task',
-      id: 'aaaaaa'
-    })
-    assert.strictEqual(trie.match('/task/aaaaaa').node, node2)
-    assert.strictEqual(trie.match('/task/111111'), null)
-    assert.deepEqual(trie.match('/admin/123456').params, {
-      user: 'admin',
-      id: '123456'
-    })
-    assert.strictEqual(trie.match('/admin/123456').node, node1)
-    assert.deepEqual(trie.match('/user/123456').params, {
-      user: 'user',
-      id: '123456'
-    })
-    assert.strictEqual(trie.match('/user/123456').node, node1)
-    assert.strictEqual(trie.match('/user/aaaaaa'), null)
-
-    trie = new Trie()
-    trie.define('/post/:id([a-z]+)')
-    assert.deepEqual(trie.match('/post/abc').params, {
-      id: 'abc'
-    })
-    assert.strictEqual(trie.match('/post/ABC'), null)
-    assert.strictEqual(trie.match('/Post/abc'), null)
-
-    trie = new Trie(true)
-    trie.define('/post/:id([a-z]+)')
-    assert.deepEqual(trie.match('/post/abc').params, {
-      id: 'abc'
-    })
-    assert.deepEqual(trie.match('/post/ABC').params, {
-      id: 'ABC'
-    })
-    assert.deepEqual(trie.match('/Post/abc').params, {
-      id: 'abc'
-    })
-
-    trie = new Trie()
-    node = trie.define('(*)')
-    assert.strictEqual(trie.match('').node, node)
-    assert.strictEqual(trie.match('/').node, node)
-    assert.strictEqual(trie.match('/x').node, node)
-    assert.strictEqual(trie.match('/x/y/z').node, node)
-    assert.deepEqual(trie.match('/post/abc').params, {})
-
-    trie = new Trie()
-    node = trie.define(':all(*)')
-    assert.deepEqual(trie.match('').params, {
-      all: ''
-    })
-    assert.deepEqual(trie.match('/').params, {
-      all: ''
-    })
-    assert.deepEqual(trie.match('/post/abc').params, {
-      all: 'post/abc'
-    })
-
-    trie = new Trie()
-    let node0 = trie.define('')
-    node = trie.define('/:all(*)')
-    assert.notStrictEqual(node0, node)
-    assert.notStrictEqual(trie.match('/').node, node)
-    assert.strictEqual(trie.match('/x').node, node)
-    assert.deepEqual(trie.match('').params, {})
-    assert.deepEqual(trie.match('/').params, {})
-    assert.deepEqual(trie.match('/post/abc').params, {
-      all: 'post/abc'
-    })
-
-    trie = new Trie()
-    node = trie.define('/:all(*)')
-    assert.strictEqual(trie.match('').node, node)
-    assert.strictEqual(trie.match('/').node, node)
-    assert.strictEqual(trie.match('/x').node, node)
-
-    trie = new Trie()
-    node = trie.define('/:type/:other(*)')
-    assert.strictEqual(trie.match('/post'), null)
-    assert.strictEqual(trie.match('/post/x').node, node)
-
-    trie = new Trie()
-    node = trie.define('/:type/:other(*)')
-    trie.define('/:type')
-    trie.define('/post')
-    assert.notStrictEqual(trie.define('/post'), node)
-    assert.notStrictEqual(trie.define('/:type'), node)
-    assert.strictEqual(trie.match('/post/abc'), null)
-    assert.deepEqual(trie.match('').params, {
-      type: ''
-    })
-    assert.deepEqual(trie.match('/').params, {
-      type: ''
-    })
-    assert.deepEqual(trie.match('/post').params, {})
-    assert.deepEqual(trie.match('/task').params, {
-      type: 'task'
-    })
-    assert.deepEqual(trie.match('/task/abc').params, {
-      type: 'task',
-      other: 'abc'
-    })
-    assert.deepEqual(trie.match('/event/x/y/z').params, {
-      type: 'event',
-      other: 'x/y/z'
-    })
-
-    trie = new Trie()
-    trie.define('/prefix:name/:other(*)')
-    trie.define('/test.com::name')
-    trie.define('/post')
-    assert.strictEqual(trie.match('/prefix'), null)
-    assert.deepEqual(trie.match('/prefix/123').params, {
-      name: '',
-      other: '123'
-    })
-    assert.deepEqual(trie.match('/prefix123/456').params, {
-      name: '123',
-      other: '456'
-    })
-    assert.deepEqual(trie.match('/prefix123/456/789').params, {
-      name: '123',
-      other: '456/789'
-    })
-
-    assert.strictEqual(trie.match('/test.com'), null)
-    assert.deepEqual(trie.match('/test.com:').params, {
-      name: ''
-    })
-    assert.deepEqual(trie.match('/test.com:zensh').params, {
-      name: 'zensh'
-    })
-    assert.strictEqual(trie.match('/test.com:zensh/test'), null)
+    assert.throws(() => trie.match(''))
+    assert.strictEqual(trie.match('/a').node, null)
   })
 
-  tman.it('trie.match, multiMatch', function () {
+  tman.it('simple pattern', function () {
     let trie = new Trie()
+    let node = trie.define('/a/b')
+    let res = trie.match('/a/b')
 
-    let node1 = trie.define('/')
-    let node2 = trie.define('/:type')
-    let node3 = trie.define('/:type/:id([a-z0-9]{6})')
+    assert.deepEqual(res.params, {})
+    assert.strictEqual(node, res.node)
 
-    let match = trie.match('/', true)
-    assert.strictEqual(match.nodes.length, 1)
-    assert.strictEqual(match.nodes[0], node1)
-    assert.deepEqual(match.params, {})
+    assert.strictEqual(trie.match('/a').node, null)
+    assert.strictEqual(trie.match('/a/b/c').node, null)
+    assert.strictEqual(trie.match('/a/x/c').node, null)
+  })
 
-    // should not match node1(root node)!
-    match = trie.match('/post', true)
-    assert.strictEqual(match.nodes.length, 1)
-    assert.strictEqual(match.nodes[0], node2)
-    assert.deepEqual(match.params, {type: 'post'})
+  tman.it('double colon pattern', function () {
+    let trie = new Trie()
+    let node = trie.define('/a/::b')
+    let res = trie.match('/a/:b')
 
-    match = trie.match('/post/abcdef', true)
-    assert.strictEqual(match.nodes.length, 2)
-    assert.strictEqual(match.nodes[0], node2)
-    assert.strictEqual(match.nodes[1], node3)
-    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'})
+    assert.deepEqual(res.params, {})
+    assert.strictEqual(node, res.node)
+    assert.strictEqual(trie.match('/a').node, null)
+    assert.strictEqual(trie.match('/a/::b').node, null)
 
-    match = trie.match('/post/abcdef/xyz', true)
-    assert.strictEqual(match.nodes.length, 2)
-    assert.strictEqual(match.nodes[0], node2)
-    assert.strictEqual(match.nodes[1], node3)
-    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'})
+    node = trie.define('/a/::b/c')
+    res = trie.match('/a/:b/c')
+    assert.deepEqual(res.params, {})
+    assert.strictEqual(node, res.node)
+    assert.strictEqual(trie.match('/a/::b/c').node, null)
 
-    match = trie.match('/post/abcdef/xyz/123', true)
-    assert.strictEqual(match.nodes.length, 2)
-    assert.strictEqual(match.nodes[0], node2)
-    assert.strictEqual(match.nodes[1], node3)
-    assert.deepEqual(match.params, {type: 'post', id: 'abcdef'})
+    node = trie.define('/a/::')
+    res = trie.match('/a/:')
+    assert.deepEqual(res.params, {})
+    assert.strictEqual(node, res.node)
+    assert.strictEqual(trie.match('/a/::').node, null)
+  })
+
+  tman.it('named pattern', function () {
+    let trie = new Trie()
+    let node = trie.define('/a/:b')
+    let res = trie.match('/a/xyz汉')
+
+    assert.strictEqual('xyz汉', res.params['b'])
+    assert.strictEqual(undefined, res.params['x'])
+    assert.strictEqual(node, res.node)
+    assert.strictEqual(trie.match('/a').node, null)
+    assert.strictEqual(trie.match('/a/xyz汉/123').node, null)
+
+    let node2 = trie.define('/:a/:b')
+    let res2 = trie.match('/a/xyz汉')
+    assert.strictEqual(node, res2.node)
+
+    res2 = trie.match('/ab/xyz汉')
+    assert.strictEqual('xyz汉', res2.params['b'])
+    assert.strictEqual('ab', res2.params['a'])
+    assert.strictEqual(node2, res2.node)
+    assert.strictEqual(trie.match('/ab').node, null)
+    assert.strictEqual(trie.match('/ab/xyz汉/123').node, null)
+  })
+
+  tman.it('wildcard pattern', function () {
+    let trie = new Trie()
+    let node = trie.define('/a/:b*')
+    let res = trie.match('/a/xyz汉')
+
+    assert.strictEqual('xyz汉', res.params['b'])
+    assert.strictEqual(node, res.node)
+    assert.strictEqual(trie.match('/a').node, null)
+
+    res = trie.match('/a/xyz汉/123')
+    assert.strictEqual('xyz汉/123', res.params['b'])
+    assert.strictEqual(node, res.node)
+
+    node = trie.define('/:a*')
+    assert.strictEqual(trie.match('/a').node, null)
+    res = trie.match('/123')
+    assert.strictEqual('123', res.params['a'])
+    assert.strictEqual(node, res.node)
+    res = trie.match('/123/xyz汉')
+    assert.strictEqual('123/xyz汉', res.params['a'])
+    assert.strictEqual(node, res.node)
+  })
+
+  tman.it('regexp pattern', function () {
+    let trie = new Trie()
+    let node = trie.define('/a/:b(^(x|y|z)$)')
+    let res = trie.match('/a/x')
+
+    assert.strictEqual('x', res.params['b'])
+    assert.strictEqual(node, res.node)
+    res = trie.match('/a/y')
+    assert.strictEqual('y', res.params['b'])
+    assert.strictEqual(node, res.node)
+    res = trie.match('/a/z')
+    assert.strictEqual('z', res.params['b'])
+    assert.strictEqual(node, res.node)
+
+    assert.strictEqual(trie.match('/a').node, null)
+    assert.strictEqual(trie.match('/a/xy').node, null)
+    assert.strictEqual(trie.match('/a/x/y').node, null)
+
+    let child = trie.define('/a/:b(^(x|y|z)$)/c')
+    res = trie.match('/a/x/c')
+    assert.strictEqual('x', res.params['b'])
+    assert.strictEqual(child, res.node)
+    res = trie.match('/a/y/c')
+    assert.strictEqual('y', res.params['b'])
+    assert.strictEqual(child, res.node)
+    res = trie.match('/a/z/c')
+    assert.strictEqual('z', res.params['b'])
+    assert.strictEqual(child, res.node)
+  })
+
+  tman.it('IgnoreCase option', function () {
+    // IgnoreCase = true
+    let trie = new Trie({ignoreCase: true})
+    let node = trie.define('/A/:Name')
+    let res = trie.match('/a/x')
+
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('x', res.params['Name'])
+    assert.strictEqual(undefined, res.params['name'])
+
+    res = trie.match('/A/X')
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('X', res.params['Name'])
+    assert.strictEqual(undefined, res.params['name'])
+
+    node = trie.define('/::A/:Name')
+
+    res = trie.match('/:a/x')
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('x', res.params['Name'])
+    assert.strictEqual(undefined, res.params['name'])
+
+    res = trie.match('/:A/X')
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('X', res.params['Name'])
+    assert.strictEqual(undefined, res.params['name'])
+
+    // IgnoreCase = false
+    trie = new Trie({ignoreCase: false})
+    node = trie.define('/A/:Name')
+
+    assert.strictEqual(trie.match('/a/x').node, null)
+    res = trie.match('/A/X')
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('X', res.params['Name'])
+
+    node = trie.define('/::A/:Name')
+    assert.strictEqual(trie.match('/:a/x').node, null)
+    res = trie.match('/:A/X')
+    assert.strictEqual(node, res.node)
+    assert.strictEqual('X', res.params['Name'])
+    assert.strictEqual(undefined, res.params['name'])
+  })
+
+  tman.it('FixedPathRedirect option', function () {
+    // FixedPathRedirect = false
+    let trie = new Trie({fixedPathRedirect: false})
+    let node1 = trie.define('/abc/efg')
+    let node2 = trie.define('/abc/xyz/')
+
+    assert.strictEqual(trie.match('/abc/efg').node, node1)
+    assert.strictEqual(trie.match('/abc/efg').fpr, '')
+    assert.strictEqual(trie.match('/abc//efg').node, null)
+    assert.strictEqual(trie.match('/abc//efg').fpr, '')
+
+    assert.strictEqual(trie.match('/abc/xyz/').node, node2)
+    assert.strictEqual(trie.match('/abc/xyz/').fpr, '')
+    assert.strictEqual(trie.match('/abc/xyz//').node, null)
+    assert.strictEqual(trie.match('/abc/xyz//').fpr, '')
+
+    // FixedPathRedirect = true
+    trie = new Trie({fixedPathRedirect: true})
+    node1 = trie.define('/abc/efg')
+    node2 = trie.define('/abc/xyz/')
+
+    assert.strictEqual(trie.match('/abc/efg').node, node1)
+    assert.strictEqual(trie.match('/abc/efg').fpr, '')
+    assert.strictEqual(trie.match('/abc//efg').node, null)
+    assert.strictEqual(trie.match('/abc//efg').fpr, '/abc/efg')
+    assert.strictEqual(trie.match('/abc///efg').node, null)
+    assert.strictEqual(trie.match('/abc///efg').fpr, '/abc/efg')
+
+    assert.strictEqual(trie.match('/abc/xyz/').node, node2)
+    assert.strictEqual(trie.match('/abc/xyz/').fpr, '')
+    assert.strictEqual(trie.match('/abc/xyz//').node, null)
+    assert.strictEqual(trie.match('/abc/xyz//').fpr, '/abc/xyz/')
+    assert.strictEqual(trie.match('/abc/xyz////').node, null)
+    assert.strictEqual(trie.match('/abc/xyz////').fpr, '/abc/xyz/')
+  })
+
+  tman.it('TrailingSlashRedirect option', function () {
+    // TrailingSlashRedirect = false
+    let trie = new Trie({trailingSlashRedirect: false})
+    let node1 = trie.define('/abc/efg')
+    let node2 = trie.define('/abc/xyz/')
+
+    assert.strictEqual(trie.match('/abc/efg').node, node1)
+    assert.strictEqual(trie.match('/abc/efg').tsr, '')
+    assert.strictEqual(trie.match('/abc/efg/').node, null)
+    assert.strictEqual(trie.match('/abc/efg/').tsr, '')
+
+    assert.strictEqual(trie.match('/abc/xyz/').node, node2)
+    assert.strictEqual(trie.match('/abc/xyz/').tsr, '')
+    assert.strictEqual(trie.match('/abc/xyz').node, null)
+    assert.strictEqual(trie.match('/abc/xyz').tsr, '')
+
+    // TrailingSlashRedirect = true
+    trie = new Trie({rrailingSlashRedirect: true})
+    node1 = trie.define('/abc/efg')
+    node2 = trie.define('/abc/xyz/')
+
+    assert.strictEqual(trie.match('/abc/efg').node, node1)
+    assert.strictEqual(trie.match('/abc/efg').tsr, '')
+    assert.strictEqual(trie.match('/abc/efg/').node, null)
+    assert.strictEqual(trie.match('/abc/efg/').tsr, '/abc/efg')
+
+    assert.strictEqual(trie.match('/abc/xyz/').node, node2)
+    assert.strictEqual(trie.match('/abc/xyz/').tsr, '')
+    assert.strictEqual(trie.match('/abc/xyz').node, null)
+    assert.strictEqual(trie.match('/abc/xyz').tsr, '/abc/xyz/')
+
+    // TrailingSlashRedirect = true and FixedPathRedirect = true
+    trie = new Trie({fixedPathRedirect: true, frailingSlashRedirect: true})
+    node1 = trie.define('/abc/efg')
+    node2 = trie.define('/abc/xyz/')
+
+    assert.strictEqual(trie.match('/abc//efg/').node, null)
+    assert.strictEqual(trie.match('/abc//efg/').tsr, '')
+    assert.strictEqual(trie.match('/abc//efg/').fpr, '/abc/efg')
+
+    assert.strictEqual(trie.match('/abc//xyz').node, null)
+    assert.strictEqual(trie.match('/abc//xyz').tsr, '')
+    assert.strictEqual(trie.match('/abc//xyz').fpr, '/abc/xyz/')
+  })
+})
+
+tman.suite('trie node', function () {
+  tman.it('Node Handle', function () {
+    let handler = () => {}
+    let trie = new Trie()
+    trie.define('/').handle('GET', handler)
+    trie.define('/').handle('PUT', handler)
+    trie.define('/api').handle('GET', handler)
+
+    assert.throws(() => trie.define('/').handle('GET', handler))
+    assert.throws(() => trie.define('/').handle('PUT', handler))
+    assert.throws(() => trie.define('/api').handle('GET', handler))
+
+    assert.strictEqual(trie.match('/').node.getHandler('GET'), handler)
+    assert.strictEqual(trie.match('/').node.getHandler('PUT'), handler)
+    assert.strictEqual(trie.match('/').node.getAllow(), 'GET, PUT')
+
+    assert.strictEqual(trie.match('/api').node.getHandler('GET'), handler)
+    assert.strictEqual(trie.match('/api').node.getAllow(), 'GET')
   })
 })

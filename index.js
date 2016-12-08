@@ -17,18 +17,18 @@ class Trie {
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the fixed path exists.
-    // Matched.FPR will returns either a fixed redirect path or an empty string.
+    // matched.fpr will returns either a fixed redirect path or an empty string.
     // For example when "/api/foo" defined and matching "/api//foo",
-    // The result Matched.FPR is "/api/foo".
+    // The result matched.fpr is "/api/foo".
     this.fpr = options.fixedPathRedirect !== false
 
     // If enabled, the trie will detect if the current path can't be matched but
     // a handler for the path with (without) the trailing slash exists.
-    // Matched.TSR will returns either a redirect path or an empty string.
+    // matched.tsr will returns either a redirect path or an empty string.
     // For example if /foo/ is requested but a route only exists for /foo, the
-    // client is redirected to /foo
+    // client is redirected to /foo.
     // For example when "/api/foo" defined and matching "/api/foo/",
-    // The result Matched.TSR is "/api/foo".
+    // The result matched.tsr is "/api/foo".
     this.tsr = options.trailingSlashRedirect !== false
     this.root = new Node(null)
   }
@@ -51,7 +51,7 @@ class Trie {
     }
     let fixedLen = path.length
     if (this.fpr) {
-      path = path.replace(fixMultiSlashReg, '')
+      path = path.replace(fixMultiSlashReg, '/')
       fixedLen -= path.length
     }
 
@@ -122,7 +122,7 @@ class Matched {
   constructor () {
     // Either a Node pointer when matched or nil
     this.node = null
-    this.params = null
+    this.params = {}
     // If FixedPathRedirect enabled, it may returns a redirect path,
     // otherwise a empty string.
     this.fpr = ''
@@ -159,6 +159,14 @@ class Node {
     } else {
       this.allow += ', ' + method
     }
+  }
+
+  getHandler (method) {
+    return this.handlers[method] || null
+  }
+
+  getAllow () {
+    return this.allow
   }
 }
 
