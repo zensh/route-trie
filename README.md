@@ -6,6 +6,8 @@ A trie-based URL router.
 [![Build Status][travis-image]][travis-url]
 [![Downloads][downloads-image]][downloads-url]
 
+### v2 has a breaking change from v1.x https://github.com/zensh/route-trie/tree/v1.2.7
+
 ### About [trie](http://en.wikipedia.org/wiki/Trie)
 
 ### [Trie-based request routing](http://blog.vulcanproxy.com/trie-based-http-requests-routing/)
@@ -21,12 +23,6 @@ Implementations:
 - [toa-router](https://github.com/toajs/toa-router) A trie router for toa(server).
 - [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
 - [RotorJS](https://github.com/kuraga/rotorjs) Component-based JavaScript library for single-page applications and an example application.
-
-### Browser Support
-
-IE9+
-
-## Demo
 
 ## Installation
 
