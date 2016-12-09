@@ -1,6 +1,6 @@
 {
   "name": "route-trie",
-  "description": "A trie-based URL router",
+  "description": "A minimal and powerful trie based url path router for Node.js.",
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
@@ -28,10 +28,12 @@
   "dependencies": {},
   "devDependencies": {
     "standard": "^8.6.0",
-    "tman": "^1.6.4"
+    "tman": "^1.6.4",
+    "istanbul": "^0.4.5"
   },
   "scripts": {
-    "test": "standard && tman"
+    "test": "standard && tman",
+    "test-cov": "istanbul cover _tman"
   },
   "files": [
     "index.js",

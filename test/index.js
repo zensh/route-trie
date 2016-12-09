@@ -211,6 +211,8 @@ tman.suite('trie.match', function () {
     assert.strictEqual(node, res.node)
 
     assert.throws(() => trie.match(''))
+    assert.throws(() => trie.match('a'))
+    assert.throws(() => trie.match(1))
     assert.strictEqual(trie.match('/a').node, null)
   })
 
@@ -456,6 +458,8 @@ tman.suite('trie node', function () {
   tman.it('Node Handle', function () {
     let handler = () => {}
     let trie = new Trie()
+
+    assert.throws(() => trie.define('/').handle('GET', 123))
     trie.define('/').handle('GET', handler)
     trie.define('/').handle('PUT', handler)
     trie.define('/api').handle('GET', handler)
@@ -469,6 +473,7 @@ tman.suite('trie node', function () {
     assert.strictEqual(trie.match('/').node.getAllow(), 'GET, PUT')
 
     assert.strictEqual(trie.match('/api').node.getHandler('GET'), handler)
+    assert.strictEqual(trie.match('/api').node.getHandler('PUT'), null)
     assert.strictEqual(trie.match('/api').node.getAllow(), 'GET')
   })
 })

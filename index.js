@@ -87,9 +87,6 @@ class Trie {
 
       parent = node
       if (parent.name) {
-        if (res.params == null) {
-          res.params = {}
-        }
         if (parent.wildcard) {
           res.params[parent.name] = path.slice(start, end)
           break

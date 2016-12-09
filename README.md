@@ -1,14 +1,17 @@
 route-trie
 ====
-A trie-based URL router.
+A minimal and powerful trie based url path router for Node.js.
 
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
+[![Coverage Status][coveralls-image]][coveralls-url]
 [![Downloads][downloads-image]][downloads-url]
 
-### v2 has a breaking change from v1.x https://github.com/zensh/route-trie/tree/v1.2.7
+## v2 has a breaking change from v1.x https://github.com/zensh/route-trie/tree/v1.2.7
 
-### About [trie](http://en.wikipedia.org/wiki/Trie)
+## Golang Version
+
+https://github.com/teambition/trie-mux
 
 ### [Trie-based request routing](http://blog.vulcanproxy.com/trie-based-http-requests-routing/)
 
@@ -23,6 +26,14 @@ Implementations:
 - [toa-router](https://github.com/toajs/toa-router) A trie router for toa(server).
 - [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
 - [RotorJS](https://github.com/kuraga/rotorjs) Component-based JavaScript library for single-page applications and an example application.
+
+## Features:
+
+1. Support regexp
+2. Fixed path automatic redirection
+3. Trailing slash automatic redirection
+4. Support `405 Method Not Allowed`
+5. Best Performance
 
 ## Installation
 
@@ -182,6 +193,9 @@ console.log(trie.match('/').node.getAllow()) // 'GET, PUT'
 
 [travis-url]: https://travis-ci.org/zensh/route-trie
 [travis-image]: http://img.shields.io/travis/zensh/route-trie.svg
+
+[coveralls-url]: https://coveralls.io/r/zensh/route-trie
+[coveralls-image]: https://coveralls.io/repos/zensh/route-trie/badge.svg
 
 [downloads-url]: https://npmjs.org/package/route-trie
 [downloads-image]: http://img.shields.io/npm/dm/route-trie.svg?style=flat-square
