@@ -6,8 +6,8 @@
 const wordReg = /^\w+$/
 const doubleColonReg = /::\w*$/
 const trimSlashReg = /^\//
-const multiSlashReg = /(\/){2,}/
-const fixMultiSlashReg = /(\/){2,}/g
+const multiSlashReg = /\/{2,}/
+const fixMultiSlashReg = /\/{2,}/g
 
 class Trie {
   constructor (options) {
@@ -144,8 +144,8 @@ class Node {
   }
 
   handle (method, handler) {
-    if (typeof handler !== 'function') {
-      throw new TypeError('handler must be function')
+    if (!handler) {
+      throw new TypeError('handler not exists')
     }
     if (this.handlers[method]) {
       throw new Error(`"${method}" already defined`)
@@ -257,6 +257,8 @@ function parseNode (parent, frag, ignoreCase) {
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.0.0'
+Trie.VERSION = 'v2.0.1'
+Trie.Node = Node
+Trie.Matched = Matched
 
 export default Trie

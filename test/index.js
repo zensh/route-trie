@@ -459,7 +459,7 @@ tman.suite('trie node', function () {
     let handler = () => {}
     let trie = new Trie()
 
-    assert.throws(() => trie.define('/').handle('GET', 123))
+    assert.throws(() => trie.define('/').handle('GET', null))
     trie.define('/').handle('GET', handler)
     trie.define('/').handle('PUT', handler)
     trie.define('/api').handle('GET', handler)

@@ -160,7 +160,7 @@ Return `matched` object:
   // assert.deepEqual(match.params, {type: 'post', id: 'abc123'})
   ```
 
-### Class: Node
+### Class: Trie.Node
 
 It is created by `trie.define`.
 
@@ -186,6 +186,26 @@ let handler = trie.match('/api').node.getHandler('GET')
 Get the "allow" header on the node.
 ```js
 console.log(trie.match('/').node.getAllow()) // 'GET, PUT'
+```
+
+### Class: Trie.Matched
+
+It is returned by `trie.match`.
+
+```js
+class Matched {
+  constructor () {
+    // Either a Node pointer when matched or nil
+    this.node = null
+    this.params = {}
+    // If FixedPathRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.fpr = ''
+    // If TrailingSlashRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.tsr = ''
+  }
+}
 ```
 
 [npm-url]: https://npmjs.org/package/route-trie
