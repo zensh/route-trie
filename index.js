@@ -55,20 +55,14 @@ class Trie {
       fixedLen -= path.length
     }
 
-    let i = 0
     let start = 1
     let end = path.length
     let res = new Matched()
     let parent = this.root
-    let _path = path + '/'
-    while (true) {
-      if (++i > end) {
-        break
-      }
-      if (_path[i] !== '/') {
-        continue
-      }
-      let frag = _path.slice(start, i)
+    for (let i = 1; i <= end; i++) {
+      if (i < end && path[i] !== '/') continue
+
+      let frag = path.slice(start, i)
       let node = matchNode(parent, frag)
       if (this.ignoreCase && node == null) {
         node = matchNode(parent, frag.toLowerCase())
@@ -257,7 +251,7 @@ function parseNode (parent, frag, ignoreCase) {
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.0.1'
+Trie.VERSION = 'v2.0.2'
 Trie.Node = Node
 Trie.Matched = Matched
 module.exports = Trie.Trie = Trie
