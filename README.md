@@ -1,5 +1,5 @@
-route-trie
-====
+# route-trie
+
 A minimal and powerful trie based url path router for Node.js.
 
 [![NPM version][npm-image]][npm-url]
@@ -27,13 +27,15 @@ Implementations:
 - [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
 - [RotorJS](https://github.com/kuraga/rotorjs) Component-based JavaScript library for single-page applications and an example application.
 
-## Features:
+## Features
 
+1. Support named parameter
 1. Support regexp
-2. Fixed path automatic redirection
-3. Trailing slash automatic redirection
-4. Support `405 Method Not Allowed`
-5. Best Performance
+1. Support suffix matching
+1. Fixed path automatic redirection
+1. Trailing slash automatic redirection
+1. Support `405 Method Not Allowed`
+1. Best Performance
 
 ## Installation
 
@@ -70,13 +72,15 @@ Returns a Node instance for the `pattern`, The same pattern will always return t
 
 ## Pattern Rule
 
-The defined pattern can contain three types of parameters:
+The defined pattern can contain six types of parameters:
 
 | Syntax | Description |
 |--------|------|
 | `:name` | named parameter |
-| `:name*` | named with catch-all parameter |
 | `:name(regexp)` | named with regexp parameter |
+| `:name+suffix` | named parameter with suffix matching |
+| `:name(regexp)+suffix` | named with regexp parameter and suffix matching |
+| `:name*` | named with catch-all parameter |
 | `::name` | not named parameter, it is literal `:name` |
 
 Named parameters are dynamic path segments. They match anything until the next '/' or the path end:
@@ -88,6 +92,34 @@ Defined: `/api/:type/:ID`
 /api/user/123/comments    no match
 ```
 
+Named with regexp parameters match anything using regexp until the next '/' or the path end:
+
+Defined: `/api/:type/:ID(^\d+$)`
+```
+/api/user/123             matched: type="user", ID="123"
+/api/user                 no match
+/api/user/abc             no match
+/api/user/123/comments    no match
+```
+
+Named parameters with suffix, such as [Google API Design](https://cloud.google.com/apis/design/custom_methods):
+
+Defined: `/api/:resource/:ID+:undelete`
+```
+/api/file/123                     no match
+/api/file/123:undelete            matched: resource="file", ID="123"
+/api/file/123:undelete/comments   no match
+```
+
+Named with regexp parameters and suffix:
+
+Defined: `/api/:resource/:ID(^\d+$)+:cancel`
+```
+/api/task/123                   no match
+/api/task/123:cancel            matched: resource="task", ID="123"
+/api/task/abc:cancel            no match
+```
+
 Named with catch-all parameters match anything until the path end, including the directory index (the '/' before the catch-all). Since they match anything until the end, catch-all parameters must always be the final path element.
 
 Defined: `/files/:filepath*`
@@ -97,20 +129,10 @@ Defined: `/files/:filepath*`
 /files/templates/article.html    matched: filepath="templates/article.html"
 ```
 
-Named with regexp parameters match anything using regexp until the next '/' or the path end:
-
-Defined: `/api/:type/:ID(^\\d+$)`
+The value of parameters is saved on the `Matched.Params`. Retrieve the value of a parameter by name:
 ```
-/api/user/123             matched: type="user", ID="123"
-/api/user                 no match
-/api/user/abc             no match
-/api/user/123/comments    no match
-```
-
-The value of parameters is saved on the `matched.params`. Retrieve the value of a parameter by name:
-```
-let type = matched.params.type
-let id   = matched.Params.ID
+type := matched.Params("type")
+id   := matched.Params("ID")
 ```
 
 **Notice for regex pattern:**
