@@ -129,10 +129,10 @@ Defined: `/files/:filepath*`
 /files/templates/article.html    matched: filepath="templates/article.html"
 ```
 
-The value of parameters is saved on the `Matched.Params`. Retrieve the value of a parameter by name:
+The value of parameters is saved on the `matched.params`. Retrieve the value of a parameter by name:
 ```
-type := matched.Params("type")
-id   := matched.Params("ID")
+let type = matched.params['type']
+let id   = matched.params['ID']
 ```
 
 **Notice for regex pattern:**
