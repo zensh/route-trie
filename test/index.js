@@ -85,30 +85,45 @@ tman.suite('trie.define', function () {
     assert.throws(() => tr1.Define('/a/:+'))
     assert.throws(() => tr1.Define('/a/:+a'))
 
-    let node = tr1.define('/a/:b+:undelete')
-    assert.strictEqual(node.name, 'b')
-    assert.strictEqual(node.wildcard, false)
-    assert.strictEqual(node.varyChildren.length, 0)
-    assert.strictEqual(node.pattern, '/a/:b+:undelete')
-    assert.throws(() => tr1.define('/a/:x'))
-    assert.throws(() => tr1.Define('/a/:x+:undelete'))
+    let node1 = tr1.define('/a/:b')
+    assert.strictEqual(node1.name, 'b')
+    assert.strictEqual(node1.wildcard, false)
+    assert.strictEqual(node1.varyChildren.length, 0)
+    assert.strictEqual(node1.parent.varyChildren.length, 1)
+    assert.strictEqual(node1.pattern, '/a/:b')
 
     let parent = tr1.define('/a')
     assert.strictEqual(parent.name, '')
-    assert.strictEqual(parent.varyChildren[0], node)
-    assert.strictEqual(node.parent, parent)
+    assert.strictEqual(parent.varyChildren[0], node1)
+    assert.strictEqual(node1.parent, parent)
+
+    let node2 = tr1.define('/a/:b+:undelete')
+    assert.strictEqual(node2.name, 'b')
+    assert.strictEqual(node2.wildcard, false)
+    assert.strictEqual(node2.varyChildren.length, 0)
+    assert.strictEqual(node2.parent.varyChildren.length, 2)
+    assert.strictEqual(node2.pattern, '/a/:b+:undelete')
+    assert.strictEqual(tr1.define('/a/:b+:undelete'), node2)
+    assert.strictEqual(parent.varyChildren[0], node2)
+    assert.strictEqual(parent.varyChildren[1], node1)
+
+    assert.throws(() => tr1.define('/a/:x'))
+    assert.throws(() => tr1.Define('/a/:x+:undelete'))
 
     let child = tr1.define('/a/:b+:undelete/c')
-    assert.strictEqual(child.parent, node)
+    assert.strictEqual(child.parent, node2)
     assert.throws(() => tr1.Define('/a/:x/c'))
-    let node1 = tr1.define('/a/:b+:delete')
-    assert.strictEqual(parent.varyChildren[1], node1)
+
+    let node3 = tr1.define('/a/:b+:delete')
+    assert.strictEqual(parent.varyChildren[0], node2)
+    assert.strictEqual(parent.varyChildren[1], node3)
+    assert.strictEqual(parent.varyChildren[2], node1)
 
     let tr2 = new Trie()
     tr2.define('/a/:b/c')
-    tr2.define('/x/:b+:delete')
-    assert.throws(() => tr2.Define('/a/:b+:delete'))
-    assert.throws(() => tr2.Define('/x/:b(xyz)+:delete'))
+    tr2.define('/a/:b+:delete')
+    assert.throws(() => tr2.define('/a/:x+:delete'))
+    tr2.define('/a/:b(xyz)+:delete')
   })
 
   tman.it('wildcard pattern', function () {
@@ -170,6 +185,35 @@ tman.suite('trie.define', function () {
     let child = trie.define('/a/:b(x|y|z)/c')
     assert.strictEqual(child.parent, node)
     assert.throws(() => trie.define('/a/:x(x|y|z)/c'))
+  })
+
+  tman.it('complex pattern', function () {
+    let trie = new Trie()
+
+    let p = trie.define('/a')
+    let n1 = trie.define('/a/:b')
+    assert.throws(() => trie.define('/a/:c'))
+
+    let n2 = trie.define('/a/:c(x|y)')
+    let n3 = trie.define('/a/:d+a1')
+    let n4 = trie.define('/a/:b+a2')
+    assert.throws(() => trie.define('/a/:bb+a2'))
+
+    let n5 = trie.define('/a/:b(a+)+a2')
+    let n6 = trie.define('/a/:b(b+)+a2')
+    let n7 = trie.define('/a/:b(c+)')
+    assert.throws(() => trie.define('/a/:bb(c+)'))
+    let n8 = trie.define('/a/:w*')
+    assert.throws(() => trie.define('/a/:b(d+)'))
+
+    assert.strictEqual(p.varyChildren[0], n5)
+    assert.strictEqual(p.varyChildren[1], n6)
+    assert.strictEqual(p.varyChildren[2], n3)
+    assert.strictEqual(p.varyChildren[3], n4)
+    assert.strictEqual(p.varyChildren[4], n2)
+    assert.strictEqual(p.varyChildren[5], n7)
+    assert.strictEqual(p.varyChildren[6], n1)
+    assert.strictEqual(p.varyChildren[7], n8)
   })
 
   tman.it('ignoreCase option', function () {

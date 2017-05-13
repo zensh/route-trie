@@ -267,32 +267,38 @@ function parseNode (parent, frag, ignoreCase) {
     node.name = name
 
     for (let child of parent.varyChildren) {
-      if (child.name !== node.name) {
-        throw new Error(`invalid pattern: "${node.getFrags()}"`)
-      }
       if (child.wildcard) {
         if (!node.wildcard) {
           throw new Error(`can't define "${node.getFrags()}" after "${child.getFrags()}"`)
         }
+        if (child.name !== node.name) {
+          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getFrags()}"`)
+        }
         return child
       }
-      if (child.suffix === '' && child.regex == null && (node.suffix !== '' || node.regex != null)) {
-        throw new Error(`can't define "${node.getFrags()}" after "${child.getFrags()}"`)
+
+      if (child.suffix !== node.suffix) {
+        continue
       }
-      if (child.suffix === node.suffix) {
-        if (child.regex == null && node.regex == null) {
-          return child
+
+      if (!node.wildcard && ((child.regex == null && node.regex == null) ||
+        (child.regex != null && node.regex != null && child.regex.toString() === node.regex.toString()))) {
+        if (child.name !== node.name) {
+          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getFrags()}"`)
         }
-        if (child.regex != null && node.regex != null && child.regex.toString() === node.regex.toString()) {
-          return child
-        }
-        if (child.regex == null && node.regex != null) {
-          throw new Error(`invalid pattern: "${node.getFrags()}"`)
-        }
+        return child
       }
     }
 
     parent.varyChildren.push(node)
+    if (parent.varyChildren.length > 1) {
+      parent.varyChildren.sort((a, b) => {
+        if (a.suffix !== '' && b.suffix === '') return 0
+        if (a.suffix === '' && b.suffix !== '') return 1
+        if (a.regex == null && b.regex != null) return 1
+        return 0
+      })
+    }
   } else if (frag[0] === '*' || frag[0] === '(' || frag[0] === ')') {
     throw new Error(`Invalid pattern: "${node.getFrags()}"`)
   } else {
@@ -302,7 +308,7 @@ function parseNode (parent, frag, ignoreCase) {
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.1.0'
+Trie.VERSION = 'v2.2.0'
 Trie.Node = Node
 Trie.Matched = Matched
 module.exports = Trie.Trie = Trie
