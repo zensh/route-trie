@@ -4,6 +4,10 @@
 'use strict'
 
 const wordReg = /^\w+$/
+// the valid characters for the path component:
+// [A-Za-z0-9!$%&'()*+,-.:;=@_~]
+// http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
+// https://tools.ietf.org/html/rfc3986#section-3.3
 const suffixReg = /\+[A-Za-z0-9!$%&'*+,-.:;=@_~]*$/
 const doubleColonReg = /::[A-Za-z0-9!$%&'*+,-.:;=@_~]*$/
 const trimSlashReg = /^\//
@@ -62,14 +66,14 @@ class Trie {
     for (let i = 1; i <= end; i++) {
       if (i < end && path[i] !== '/') continue
 
-      let frag = path.slice(start, i)
-      let node = matchNode(parent, frag)
+      let segment = path.slice(start, i)
+      let node = matchNode(parent, segment)
       if (this.ignoreCase && node == null) {
-        node = matchNode(parent, frag.toLowerCase())
+        node = matchNode(parent, segment.toLowerCase())
       }
       if (node == null) {
         // TrailingSlashRedirect: /acb/efg/ -> /acb/efg
-        if (this.tsr && frag === '' && i === end && parent.endpoint) {
+        if (this.tsr && segment === '' && i === end && parent.endpoint) {
           matched.tsr = path.slice(0, end - 1)
           if (this.fpr && fixedLen > 0) {
             matched.fpr = matched.tsr
@@ -86,9 +90,9 @@ class Trie {
           break
         } else {
           if (parent.suffix !== '') {
-            frag = frag.slice(0, frag.length - parent.suffix.length)
+            segment = segment.slice(0, segment.length - parent.suffix.length)
           }
-          matched.params[parent.name] = frag
+          matched.params[parent.name] = segment
         }
       }
       start = i + 1
@@ -131,7 +135,7 @@ class Node {
     this.name = ''
     this.allow = ''
     this.pattern = ''
-    this.frag = ''
+    this.segment = ''
     this.suffix = ''
     this.regex = null
     this.endpoint = false
@@ -165,42 +169,42 @@ class Node {
     return this.allow
   }
 
-  getFrags () {
-    let frags = this.frag
+  getSegments () {
+    let segments = this.segment
     if (this.parent != null) {
-      frags = this.parent.getFrags() + '/' + frags
+      segments = this.parent.getSegments() + '/' + segments
     }
-    return frags
+    return segments
   }
 }
 
-function defineNode (parent, frags, ignoreCase) {
-  let frag = frags.shift()
-  let child = parseNode(parent, frag, ignoreCase)
+function defineNode (parent, segments, ignoreCase) {
+  let segment = segments.shift()
+  let child = parseNode(parent, segment, ignoreCase)
 
-  if (!frags.length) {
+  if (!segments.length) {
     child.endpoint = true
     return child
   }
   if (child.wildcard) {
     throw new Error(`Can not define pattern after wildcard: "${child.pattern}"`)
   }
-  return defineNode(child, frags, ignoreCase)
+  return defineNode(child, segments, ignoreCase)
 }
 
-function matchNode (parent, frag) {
-  if (parent.children[frag] != null) {
-    return parent.children[frag]
+function matchNode (parent, segment) {
+  if (parent.children[segment] != null) {
+    return parent.children[segment]
   }
   for (let child of parent.varyChildren) {
-    let _frag = frag
+    let _segment = segment
     if (child.suffix !== '') {
-      if (frag === child.suffix || !frag.endsWith(child.suffix)) {
+      if (segment === child.suffix || !segment.endsWith(child.suffix)) {
         continue
       }
-      _frag = frag.slice(0, frag.length - child.suffix.length)
+      _segment = segment.slice(0, segment.length - child.suffix.length)
     }
-    if (child.regex != null && !child.regex.test(_frag)) {
+    if (child.regex != null && !child.regex.test(_segment)) {
       continue
     }
     return child
@@ -208,28 +212,28 @@ function matchNode (parent, frag) {
   return null
 }
 
-function parseNode (parent, frag, ignoreCase) {
-  let _frag = frag
-  if (doubleColonReg.test(frag)) {
-    _frag = frag.slice(1)
+function parseNode (parent, segment, ignoreCase) {
+  let _segment = segment
+  if (doubleColonReg.test(segment)) {
+    _segment = segment.slice(1)
   }
   if (ignoreCase) {
-    _frag = _frag.toLowerCase()
+    _segment = _segment.toLowerCase()
   }
 
-  if (parent.children[_frag] != null) return parent.children[_frag]
+  if (parent.children[_segment] != null) return parent.children[_segment]
 
   let node = new Node(parent)
 
-  if (frag === '') {
+  if (segment === '') {
     parent.children[''] = node
-  } else if (doubleColonReg.test(frag)) {
+  } else if (doubleColonReg.test(segment)) {
     // pattern "/a/::" should match "/a/:"
     // pattern "/a/::bc" should match "/a/:bc"
     // pattern "/a/::/bc" should match "/a/:/bc"
-    parent.children[_frag] = node
-  } else if (frag[0] === ':') {
-    let name = frag.slice(1)
+    parent.children[_segment] = node
+  } else if (segment[0] === ':') {
+    let name = segment.slice(1)
 
     switch (name[name.length - 1]) {
       case '*':
@@ -242,7 +246,7 @@ function parseNode (parent, frag, ignoreCase) {
           node.suffix = name.slice(i + 1)
           name = name.slice(0, i)
           if (node.suffix === '') {
-            throw new Error(`invalid pattern: "${node.getFrags()}"`)
+            throw new Error(`invalid pattern: "${node.getSegments()}"`)
           }
         }
 
@@ -254,7 +258,7 @@ function parseNode (parent, frag, ignoreCase) {
               name = name.slice(0, i)
               node.regex = new RegExp(regex)
             } else {
-              throw new Error(`Invalid pattern: "${node.getFrags()}"`)
+              throw new Error(`Invalid pattern: "${node.getSegments()}"`)
             }
           }
         }
@@ -262,17 +266,17 @@ function parseNode (parent, frag, ignoreCase) {
 
     // name must be word characters `[0-9A-Za-z_]`
     if (!wordReg.test(name)) {
-      throw new Error(`Invalid pattern: "${node.getFrags()}"`)
+      throw new Error(`Invalid pattern: "${node.getSegments()}"`)
     }
     node.name = name
 
     for (let child of parent.varyChildren) {
       if (child.wildcard) {
         if (!node.wildcard) {
-          throw new Error(`can't define "${node.getFrags()}" after "${child.getFrags()}"`)
+          throw new Error(`can't define "${node.getSegments()}" after "${child.getSegments()}"`)
         }
         if (child.name !== node.name) {
-          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getFrags()}"`)
+          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getSegments()}"`)
         }
         return child
       }
@@ -284,7 +288,7 @@ function parseNode (parent, frag, ignoreCase) {
       if (!node.wildcard && ((child.regex == null && node.regex == null) ||
         (child.regex != null && node.regex != null && child.regex.toString() === node.regex.toString()))) {
         if (child.name !== node.name) {
-          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getFrags()}"`)
+          throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getSegments()}"`)
         }
         return child
       }
@@ -299,16 +303,16 @@ function parseNode (parent, frag, ignoreCase) {
         return 0
       })
     }
-  } else if (frag[0] === '*' || frag[0] === '(' || frag[0] === ')') {
-    throw new Error(`Invalid pattern: "${node.getFrags()}"`)
+  } else if (segment[0] === '*' || segment[0] === '(' || segment[0] === ')') {
+    throw new Error(`Invalid pattern: "${node.getSegments()}"`)
   } else {
-    parent.children[_frag] = node
+    parent.children[_segment] = node
   }
   return node
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.2.0'
+Trie.VERSION = 'v2.2.1'
 Trie.Node = Node
 Trie.Matched = Matched
 
