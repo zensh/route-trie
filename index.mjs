@@ -312,8 +312,8 @@ function parseNode (parent, segment, ignoreCase) {
 }
 
 Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.2.1'
+Trie.VERSION = 'v2.2.2'
 Trie.Node = Node
 Trie.Matched = Matched
 
-export default Trie
+export { Node, Matched, Trie, Trie as default }
