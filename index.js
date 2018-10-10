@@ -40,8 +40,8 @@ class Trie {
   define (pattern) {
     if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
     if (pattern.includes('//')) throw new Error('Multi-slash existhis.')
-    let _pattern = pattern.replace(trimSlashReg, '')
-    let node = defineNode(this.root, _pattern.split('/'), this.ignoreCase)
+    const _pattern = pattern.replace(trimSlashReg, '')
+    const node = defineNode(this.root, _pattern.split('/'), this.ignoreCase)
 
     if (node.pattern === '') node.pattern = pattern
     return node
@@ -60,8 +60,8 @@ class Trie {
     }
 
     let start = 1
-    let end = path.length
-    let matched = new Matched()
+    const end = path.length
+    const matched = new Matched()
     let parent = this.root
     for (let i = 1; i <= end; i++) {
       if (i < end && path[i] !== '/') continue
@@ -179,8 +179,8 @@ class Node {
 }
 
 function defineNode (parent, segments, ignoreCase) {
-  let segment = segments.shift()
-  let child = parseNode(parent, segment, ignoreCase)
+  const segment = segments.shift()
+  const child = parseNode(parent, segment, ignoreCase)
 
   if (!segments.length) {
     child.endpoint = true
@@ -196,7 +196,7 @@ function matchNode (parent, segment) {
   if (parent.children[segment] != null) {
     return parent.children[segment]
   }
-  for (let child of parent.varyChildren) {
+  for (const child of parent.varyChildren) {
     let _segment = segment
     if (child.suffix !== '') {
       if (segment === child.suffix || !segment.endsWith(child.suffix)) {
@@ -223,7 +223,7 @@ function parseNode (parent, segment, ignoreCase) {
 
   if (parent.children[_segment] != null) return parent.children[_segment]
 
-  let node = new Node(parent)
+  const node = new Node(parent)
 
   if (segment === '') {
     parent.children[''] = node
@@ -241,7 +241,7 @@ function parseNode (parent, segment, ignoreCase) {
         node.wildcard = true
         break
       default:
-        let i = name.search(suffixReg)
+        const i = name.search(suffixReg)
         if (i >= 0) {
           node.suffix = name.slice(i + 1)
           name = name.slice(0, i)
@@ -251,9 +251,9 @@ function parseNode (parent, segment, ignoreCase) {
         }
 
         if (name[name.length - 1] === ')') {
-          let i = name.indexOf('(')
+          const i = name.indexOf('(')
           if (i > 0) {
-            let regex = name.slice(i + 1, name.length - 1)
+            const regex = name.slice(i + 1, name.length - 1)
             if (regex.length > 0) {
               name = name.slice(0, i)
               node.regex = new RegExp(regex)
@@ -270,7 +270,7 @@ function parseNode (parent, segment, ignoreCase) {
     }
     node.name = name
 
-    for (let child of parent.varyChildren) {
+    for (const child of parent.varyChildren) {
       if (child.wildcard) {
         if (!node.wildcard) {
           throw new Error(`can't define "${node.getSegments()}" after "${child.getSegments()}"`)
