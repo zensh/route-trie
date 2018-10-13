@@ -27,8 +27,8 @@ function test (Trie) {
       assert.strictEqual(node.name, '')
       assert.strictEqual(node.pattern, '/a/b')
       assert.strictEqual(node, trie.define('a/b'))
-      assert.notEqual(node, trie.define('a/b/'))
-      assert.notEqual(node, trie.define('/a/b/'))
+      assert.notStrictEqual(node, trie.define('a/b/'))
+      assert.notStrictEqual(node, trie.define('/a/b/'))
       assert.strictEqual(trie.define('/a/b/'), trie.define('a/b/'))
 
       const parent = trie.define('/a')
@@ -44,12 +44,12 @@ function test (Trie) {
 
       const node = trie.define('/a/::b')
       assert.strictEqual(node.name, '')
-      assert.notEqual(node, trie.define('/a/::'))
-      assert.notEqual(node, trie.define('/a/::x'))
+      assert.notStrictEqual(node, trie.define('/a/::'))
+      assert.notStrictEqual(node, trie.define('/a/::x'))
 
       const parent = trie.define('/a')
       assert.strictEqual(node.parent, parent)
-      assert.notEqual(parent.varyChildren, node)
+      assert.notStrictEqual(parent.varyChildren, node)
       assert.strictEqual(parent.children[':'], trie.define('/a/::'))
       assert.strictEqual(parent.children[':b'], trie.define('/a/::b'))
       assert.strictEqual(parent.children[':x'], trie.define('/a/::x'))
@@ -69,7 +69,7 @@ function test (Trie) {
       const node = trie.define('/a/:b')
       assert.strictEqual(node.name, 'b')
       assert.strictEqual(node.wildcard, false)
-      assert.deepEqual(node.varyChildren, [])
+      assert.deepStrictEqual(node.varyChildren, [])
       assert.strictEqual(node.pattern, '/a/:b')
       assert.throws(() => trie.define('/a/:x'))
 
@@ -140,7 +140,7 @@ function test (Trie) {
       const node = trie.define('/a/:b*')
       assert.strictEqual(node.name, 'b')
       assert.strictEqual(node.wildcard, true)
-      assert.deepEqual(node.varyChildren, [])
+      assert.deepStrictEqual(node.varyChildren, [])
       assert.strictEqual(node.pattern, '/a/:b*')
       assert.throws(() => trie.define('/a/:x*'))
 
@@ -174,7 +174,7 @@ function test (Trie) {
       assert.strictEqual(node.name, 'b')
       assert.strictEqual(node.pattern, '/a/:b(x|y|z)')
       assert.strictEqual(node.wildcard, false)
-      assert.deepEqual(node.varyChildren, [])
+      assert.deepStrictEqual(node.varyChildren, [])
       assert.strictEqual(node, trie.define('/a/:b(x|y|z)'))
       assert.notStrictEqual(trie.define('/a/:b(xyz)'), node)
       assert.throws(() => trie.define('/a/:x(x|y|z)'))
@@ -220,7 +220,7 @@ function test (Trie) {
     })
 
     tman.it('ignoreCase option', function () {
-      let trie = new Trie({ignoreCase: true})
+      let trie = new Trie({ ignoreCase: true })
       let node = trie.define('/A/b')
       assert.strictEqual(node, trie.define('/a/b'))
       assert.strictEqual(node, trie.define('/a/B'))
@@ -228,13 +228,13 @@ function test (Trie) {
       node = trie.define('/::A/b')
       assert.strictEqual(node, trie.define('/::a/b'))
 
-      trie = new Trie({ignoreCase: false})
+      trie = new Trie({ ignoreCase: false })
       node = trie.define('/A/b')
-      assert.notEqual(node, trie.define('/a/b'))
-      assert.notEqual(node, trie.define('/a/B'))
+      assert.notStrictEqual(node, trie.define('/a/b'))
+      assert.notStrictEqual(node, trie.define('/a/B'))
 
       node = trie.define('/::A/b')
-      assert.notEqual(node, trie.define('/::a/b'))
+      assert.notStrictEqual(node, trie.define('/::a/b'))
     })
 
     tman.it('throw error when not a string', function () {
@@ -285,7 +285,7 @@ function test (Trie) {
       const node = trie.define('/')
       const res = trie.match('/')
 
-      assert.deepEqual(res.params, {})
+      assert.deepStrictEqual(res.params, {})
       assert.strictEqual(node, res.node)
 
       assert.throws(() => trie.match(''))
@@ -299,7 +299,7 @@ function test (Trie) {
       const node = trie.define('/a/b')
       const res = trie.match('/a/b')
 
-      assert.deepEqual(res.params, {})
+      assert.deepStrictEqual(res.params, {})
       assert.strictEqual(node, res.node)
 
       assert.strictEqual(trie.match('/a').node, null)
@@ -312,20 +312,20 @@ function test (Trie) {
       let node = trie.define('/a/::b')
       let res = trie.match('/a/:b')
 
-      assert.deepEqual(res.params, {})
+      assert.deepStrictEqual(res.params, {})
       assert.strictEqual(node, res.node)
       assert.strictEqual(trie.match('/a').node, null)
       assert.strictEqual(trie.match('/a/::b').node, null)
 
       node = trie.define('/a/::b/c')
       res = trie.match('/a/:b/c')
-      assert.deepEqual(res.params, {})
+      assert.deepStrictEqual(res.params, {})
       assert.strictEqual(node, res.node)
       assert.strictEqual(trie.match('/a/::b/c').node, null)
 
       node = trie.define('/a/::')
       res = trie.match('/a/:')
-      assert.deepEqual(res.params, {})
+      assert.deepStrictEqual(res.params, {})
       assert.strictEqual(node, res.node)
       assert.strictEqual(trie.match('/a/::').node, null)
     })
@@ -428,7 +428,7 @@ function test (Trie) {
 
     tman.it('IgnoreCase option', function () {
       // IgnoreCase = true
-      let trie = new Trie({ignoreCase: true})
+      let trie = new Trie({ ignoreCase: true })
       let node = trie.define('/A/:Name')
       let res = trie.match('/a/x')
 
@@ -454,7 +454,7 @@ function test (Trie) {
       assert.strictEqual(undefined, res.params['name'])
 
       // IgnoreCase = false
-      trie = new Trie({ignoreCase: false})
+      trie = new Trie({ ignoreCase: false })
       node = trie.define('/A/:Name')
 
       assert.strictEqual(trie.match('/a/x').node, null)
@@ -472,7 +472,7 @@ function test (Trie) {
 
     tman.it('FixedPathRedirect option', function () {
       // FixedPathRedirect = false
-      let trie = new Trie({fixedPathRedirect: false})
+      let trie = new Trie({ fixedPathRedirect: false })
       let node1 = trie.define('/abc/efg')
       let node2 = trie.define('/abc/xyz/')
 
@@ -487,7 +487,7 @@ function test (Trie) {
       assert.strictEqual(trie.match('/abc/xyz//').fpr, '')
 
       // FixedPathRedirect = true
-      trie = new Trie({fixedPathRedirect: true})
+      trie = new Trie({ fixedPathRedirect: true })
       node1 = trie.define('/abc/efg')
       node2 = trie.define('/abc/xyz/')
 
@@ -508,7 +508,7 @@ function test (Trie) {
 
     tman.it('TrailingSlashRedirect option', function () {
       // TrailingSlashRedirect = false
-      let trie = new Trie({trailingSlashRedirect: false})
+      let trie = new Trie({ trailingSlashRedirect: false })
       let node1 = trie.define('/abc/efg')
       let node2 = trie.define('/abc/xyz/')
 
@@ -523,7 +523,7 @@ function test (Trie) {
       assert.strictEqual(trie.match('/abc/xyz').tsr, '')
 
       // TrailingSlashRedirect = true
-      trie = new Trie({rrailingSlashRedirect: true})
+      trie = new Trie({ rrailingSlashRedirect: true })
       node1 = trie.define('/abc/efg')
       node2 = trie.define('/abc/xyz/')
 
@@ -538,7 +538,7 @@ function test (Trie) {
       assert.strictEqual(trie.match('/abc/xyz').tsr, '/abc/xyz/')
 
       // TrailingSlashRedirect = true and FixedPathRedirect = true
-      trie = new Trie({fixedPathRedirect: true, frailingSlashRedirect: true})
+      trie = new Trie({ fixedPathRedirect: true, frailingSlashRedirect: true })
       node1 = trie.define('/abc/efg')
       node2 = trie.define('/abc/xyz/')
 
