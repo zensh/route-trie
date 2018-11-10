@@ -7,8 +7,6 @@ A minimal and powerful trie based url path router for Node.js.
 [![Coverage Status][coveralls-image]][coveralls-url]
 [![Downloads][downloads-image]][downloads-url]
 
-## v2 has a breaking change from v1.x https://github.com/zensh/route-trie/tree/v1.2.7
-
 ## Golang Version
 
 https://github.com/teambition/trie-mux
@@ -24,18 +22,16 @@ and scales with the number of routes.
 Implementations:
 
 - [toa-router](https://github.com/toajs/toa-router) A trie router for toa(server).
-- [hirouter](https://github.com/teambition/hirouter) HTML5 history and router, simple, powerful and no framework(browser).
-- [RotorJS](https://github.com/kuraga/rotorjs) Component-based JavaScript library for single-page applications and an example application.
 
 ## Features
 
 1. Support named parameter
-1. Support regexp
-1. Support suffix matching
-1. Fixed path automatic redirection
-1. Trailing slash automatic redirection
-1. Support `405 Method Not Allowed`
-1. Best Performance
+2. Support regexp
+3. Support suffix matching
+4. Fixed path automatic redirection
+5. Trailing slash automatic redirection
+6. Support `405 Method Not Allowed`
+7. Best Performance
 
 ## Installation
 
@@ -46,7 +42,7 @@ npm install route-trie
 ## API
 
 ```js
-const Trie = require('route-trie')
+const { Trie, Node, Matched } = require('route-trie')
 ```
 
 ### Class: Trie(options)

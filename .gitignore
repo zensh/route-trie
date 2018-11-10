@@ -2,6 +2,7 @@ node_modules/
 debug/
 coverage/
 test.js
+build
 
 npm-debug.log
 .DS_Store

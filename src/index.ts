@@ -3,19 +3,126 @@
 // **License:** MIT
 'use strict'
 
-const wordReg = /^\w+$/
 // the valid characters for the path component:
 // [A-Za-z0-9!$%&'()*+,-.:;=@_~]
 // http://stackoverflow.com/questions/4669692/valid-characters-for-directory-part-of-a-url-for-short-links
 // https://tools.ietf.org/html/rfc3986#section-3.3
+const wordReg = /^\w+$/
 const suffixReg = /\+[A-Za-z0-9!$%&'*+,-.:;=@_~]*$/
-const doubleColonReg = /::[A-Za-z0-9!$%&'*+,-.:;=@_~]*$/
+const doubleColonReg = /^::[A-Za-z0-9!$%&'*+,-.:;=@_~]*$/
 const trimSlashReg = /^\//
 const fixMultiSlashReg = /\/{2,}/g
 
-class Trie {
-  constructor (options) {
-    options = options || {}
+export interface TrieOptions {
+  ignoreCase?: boolean
+  fixedPathRedirect?: boolean
+  trailingSlashRedirect?: boolean
+}
+
+export interface Params {
+  [index: string]: string
+}
+
+export class Matched {
+  node: Node | null
+  params: Params
+  fpr: string
+  tsr: string
+  constructor () {
+    // Either a Node pointer when matched or nil
+    this.node = null
+    this.params = {}
+    // If FixedPathRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.fpr = ''
+    // If TrailingSlashRedirect enabled, it may returns a redirect path,
+    // otherwise a empty string.
+    this.tsr = ''
+  }
+}
+
+interface Children {
+  [index: string]: Node
+}
+interface Handlers {
+  [index: string]: any
+}
+
+export class Node {
+  name: string
+  allow: string
+  pattern: string
+  suffix: string
+  regex: RegExp | null
+  endpoint: boolean
+  wildcard: boolean
+  varyChildren: Node[]
+  children: Children
+  parent: Node | null
+  private handlers: Handlers
+  private segment: string
+  constructor (parent: Node | null) {
+    this.name = ''
+    this.allow = ''
+    this.pattern = ''
+    this.segment = ''
+    this.suffix = ''
+    this.regex = null
+    this.endpoint = false
+    this.wildcard = false
+    this.varyChildren = []
+    this.parent = parent
+    this.children = Object.create(null)
+    this.handlers = Object.create(null)
+  }
+
+  handle (method: string, handler: any) {
+    if (handler == null) {
+      throw new TypeError('handler should not be null')
+    }
+    if (this.handlers[method] != null) {
+      throw new Error(`"${method}" already defined`)
+    }
+    this.handlers[method] = handler
+    if (this.allow === '') {
+      this.allow = method
+    } else {
+      this.allow += ', ' + method
+    }
+  }
+
+  getHandler (method: string): any {
+    return this.handlers[method] == null ? null : this.handlers[method]
+  }
+
+  getAllow () {
+    return this.allow
+  }
+
+  getPattern () {
+    return this.pattern
+  }
+
+  getSegments () {
+    let segments = this.segment
+    if (this.parent != null) {
+      segments = this.parent.getSegments() + '/' + segments
+    }
+    return segments
+  }
+}
+
+export class Trie {
+  static NAME = 'Trie'
+  static VERSION = 'v3.0.0'
+  static Node = Node
+  static Matched = Matched
+
+  root: Node
+  private ignoreCase: boolean
+  private fpr: boolean
+  private tsr: boolean
+  constructor (options: TrieOptions = {}) {
     // Ignore case when matching URL path.
     this.ignoreCase = options.ignoreCase !== false
 
@@ -37,20 +144,28 @@ class Trie {
     this.root = new Node(null)
   }
 
-  define (pattern) {
-    if (typeof pattern !== 'string') throw new TypeError('Pattern must be string.')
-    if (pattern.includes('//')) throw new Error('Multi-slash existhis.')
+  define (pattern: string): Node {
+    if (typeof pattern !== 'string') {
+      throw new TypeError('Pattern must be string.')
+    }
+    if (pattern.includes('//')) {
+      throw new Error('Multi-slash existhis.')
+    }
+
     const _pattern = pattern.replace(trimSlashReg, '')
     const node = defineNode(this.root, _pattern.split('/'), this.ignoreCase)
-
-    if (node.pattern === '') node.pattern = pattern
+    if (node.pattern === '') {
+      node.pattern = pattern
+    }
     return node
   }
 
-  match (path) {
+  match (path: string): Matched {
     // the path should be normalized before match, just as path.normalize do in Node.js
-    if (typeof path !== 'string') throw new TypeError('Path must be string.')
-    if (!path || path[0] !== '/') {
+    if (typeof path !== 'string') {
+      throw new TypeError('Path must be string.')
+    }
+    if (path === '' || path[0] !== '/') {
       throw new Error(`Path is not start with "/": "${path}"`)
     }
     let fixedLen = path.length
@@ -60,11 +175,13 @@ class Trie {
     }
 
     let start = 1
+    let parent = this.root
     const end = path.length
     const matched = new Matched()
-    let parent = this.root
     for (let i = 1; i <= end; i++) {
-      if (i < end && path[i] !== '/') continue
+      if (i < end && path[i] !== '/') {
+        continue
+      }
 
       let segment = path.slice(start, i)
       let node = matchNode(parent, segment)
@@ -84,7 +201,7 @@ class Trie {
       }
 
       parent = node
-      if (parent.name) {
+      if (parent.name !== '') {
         if (parent.wildcard) {
           matched.params[parent.name] = path.slice(start, end)
           break
@@ -116,73 +233,11 @@ class Trie {
   }
 }
 
-class Matched {
-  constructor () {
-    // Either a Node pointer when matched or nil
-    this.node = null
-    this.params = {}
-    // If FixedPathRedirect enabled, it may returns a redirect path,
-    // otherwise a empty string.
-    this.fpr = ''
-    // If TrailingSlashRedirect enabled, it may returns a redirect path,
-    // otherwise a empty string.
-    this.tsr = ''
-  }
-}
-
-class Node {
-  constructor (parent) {
-    this.name = ''
-    this.allow = ''
-    this.pattern = ''
-    this.segment = ''
-    this.suffix = ''
-    this.regex = null
-    this.endpoint = false
-    this.wildcard = false
-    this.varyChildren = []
-    this.parent = parent
-    this.children = Object.create(null)
-    this.handlers = Object.create(null)
-  }
-
-  handle (method, handler) {
-    if (!handler) {
-      throw new TypeError('handler not exists')
-    }
-    if (this.handlers[method]) {
-      throw new Error(`"${method}" already defined`)
-    }
-    this.handlers[method] = handler
-    if (this.allow === '') {
-      this.allow = method
-    } else {
-      this.allow += ', ' + method
-    }
-  }
-
-  getHandler (method) {
-    return this.handlers[method] || null
-  }
-
-  getAllow () {
-    return this.allow
-  }
-
-  getSegments () {
-    let segments = this.segment
-    if (this.parent != null) {
-      segments = this.parent.getSegments() + '/' + segments
-    }
-    return segments
-  }
-}
-
-function defineNode (parent, segments, ignoreCase) {
-  const segment = segments.shift()
+function defineNode (parent: Node, segments: string[], ignoreCase: boolean): Node {
+  const segment = segments.shift() as string
   const child = parseNode(parent, segment, ignoreCase)
 
-  if (!segments.length) {
+  if (segments.length === 0) {
     child.endpoint = true
     return child
   }
@@ -192,7 +247,7 @@ function defineNode (parent, segments, ignoreCase) {
   return defineNode(child, segments, ignoreCase)
 }
 
-function matchNode (parent, segment) {
+function matchNode (parent: Node, segment: string): Node | null {
   if (parent.children[segment] != null) {
     return parent.children[segment]
   }
@@ -212,7 +267,7 @@ function matchNode (parent, segment) {
   return null
 }
 
-function parseNode (parent, segment, ignoreCase) {
+function parseNode (parent: Node, segment: string, ignoreCase: boolean): Node {
   let _segment = segment
   if (doubleColonReg.test(segment)) {
     _segment = segment.slice(1)
@@ -221,7 +276,9 @@ function parseNode (parent, segment, ignoreCase) {
     _segment = _segment.toLowerCase()
   }
 
-  if (parent.children[_segment] != null) return parent.children[_segment]
+  if (parent.children[_segment] != null) {
+    return parent.children[_segment]
+  }
 
   const node = new Node(parent)
 
@@ -241,10 +298,10 @@ function parseNode (parent, segment, ignoreCase) {
         node.wildcard = true
         break
       default:
-        const i = name.search(suffixReg)
-        if (i >= 0) {
-          node.suffix = name.slice(i + 1)
-          name = name.slice(0, i)
+        const n = name.search(suffixReg)
+        if (n >= 0) {
+          node.suffix = name.slice(n + 1)
+          name = name.slice(0, n)
           if (node.suffix === '') {
             throw new Error(`invalid pattern: "${node.getSegments()}"`)
           }
@@ -286,7 +343,8 @@ function parseNode (parent, segment, ignoreCase) {
       }
 
       if (!node.wildcard && ((child.regex == null && node.regex == null) ||
-        (child.regex != null && node.regex != null && child.regex.toString() === node.regex.toString()))) {
+        (child.regex != null && node.regex != null &&
+        child.regex.toString() === node.regex.toString()))) {
         if (child.name !== node.name) {
           throw new Error(`invalid pattern name "${node.name}", as prev defined "${child.getSegments()}"`)
         }
@@ -297,9 +355,15 @@ function parseNode (parent, segment, ignoreCase) {
     parent.varyChildren.push(node)
     if (parent.varyChildren.length > 1) {
       parent.varyChildren.sort((a, b) => {
-        if (a.suffix !== '' && b.suffix === '') return 0
-        if (a.suffix === '' && b.suffix !== '') return 1
-        if (a.regex == null && b.regex != null) return 1
+        if (a.suffix !== '' && b.suffix === '') {
+          return 0
+        }
+        if (a.suffix === '' && b.suffix !== '') {
+          return 1
+        }
+        if (a.regex == null && b.regex != null) {
+          return 1
+        }
         return 0
       })
     }
@@ -311,8 +375,4 @@ function parseNode (parent, segment, ignoreCase) {
   return node
 }
 
-Trie.NAME = 'Trie'
-Trie.VERSION = 'v2.2.2'
-Trie.Node = Node
-Trie.Matched = Matched
-module.exports = Trie.Trie = Trie
+export default Trie

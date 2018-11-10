@@ -4,16 +4,21 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "2.2.3",
+  "version": "3.0.0",
   "license": "MIT",
-  "main": "./index",
-  "jsnext:main": "index.mjs",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "scripts": {
+    "build": "rm -rf build && tsc",
+    "test": "tslint -p tsconfig.json -t stylish 'src/**/*.ts' 'test/**/*.ts' && tman -r ts-node/register 'test/**/*.ts'",
+    "lint": "tslint -p tsconfig.json -t stylish 'src/**/*.ts' 'test/**/*.ts'"
+  },
   "repository": {
     "type": "git",
     "url": "git@github.com:zensh/route-trie.git"
   },
   "engines": {
-    "node": ">= 4.5.0"
+    "node": ">= 8"
   },
   "homepage": "https://github.com/zensh/route-trie",
   "keywords": [
@@ -27,18 +32,17 @@
   ],
   "dependencies": {},
   "devDependencies": {
-    "@std/esm": "^0.26.0",
-    "istanbul": "^0.4.5",
-    "standard": "^12.0.1",
-    "tman": "^1.8.1"
-  },
-  "scripts": {
-    "test": "standard && tman",
-    "test-cov": "istanbul cover _tman"
+    "@types/node": "^10.12.5",
+    "tman": "^1.8.1",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "tslint-eslint-rules": "^5.4.0",
+    "typescript": "^3.1.6"
   },
   "files": [
-    "index.js",
-    "index.mjs",
-    "README.md"
+    "build",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md"
   ]
 }
